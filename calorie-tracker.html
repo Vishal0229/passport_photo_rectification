@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calorie Tracker</title>
+  <style>
+    :root {
+      --green:       #2ecc71;
+      --green-dk:    #27ae60;
+      --teal:        #1abc9c;
+      --bg:          #f0f4f0;
+      --surface:     #ffffff;
+      --border:      #dce8dc;
+      --text:        #2c3e50;
+      --muted:       #7f8c8d;
+      --danger:      #e74c3c;
+      --warning:     #f39c12;
+      --amber:       #e67e22;
+      --blue:        #3498db;
+      --red:         #e74c3c;
+      --radius:      10px;
+      --radius-sm:   6px;
+      --shadow:      0 2px 10px rgba(0,0,0,0.08);
+      --shadow-lg:   0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--green-dk), var(--teal));
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header .logo {
+      font-size: 28px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header p {
+      font-size: 0.85rem;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    /* ── Layout ── */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 20px;
+    }
+    .left-col { display: flex; flex-direction: column; gap: 20px; }
+    .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px 24px;
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h2 .icon { font-size: 1.1em; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 5px;
+    }
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      color: var(--text);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fff;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(46,204,113,0.15);
+    }
+    input.error-border { border-color: var(--danger); }
+
+    .error-msg {
+      font-size: 0.78rem;
+      color: var(--danger);
+      margin-top: 4px;
+      min-height: 16px;
+    }
+
+    /* ── Autocomplete ── */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      z-index: 200;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .autocomplete-list li {
+      list-style: none;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #f5f5f5;
+      transition: background 0.1s;
+    }
+    .autocomplete-list li:last-child { border-bottom: none; }
+    .autocomplete-list li:hover,
+    .autocomplete-list li.highlighted { background: #f0faf4; color: var(--green-dk); }
+    .autocomplete-list li .ac-icon { color: var(--green); font-size: 0.85em; }
+    .hidden { display: none !important; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 9px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--green-dk); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(46,204,113,0.35); }
+    .btn-secondary {
+      background: #eaf5ee;
+      color: var(--green-dk);
+      border: 1.5px solid var(--green);
+    }
+    .btn-secondary:hover { background: var(--green); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1.5px solid transparent;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+    .btn-danger:hover { background: #fdf0ee; border-color: var(--danger); }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    /* ── Meal List ── */
+    .meal-empty {
+      text-align: center;
+      padding: 24px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .meal-empty .meal-empty-icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+    .meal-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      background: #fafdf9;
+      transition: box-shadow 0.15s;
+    }
+    .meal-item:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .meal-item-name {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: capitalize;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .meal-item-grams {
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: #f0f0f0;
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: #e8f5e9;
+      color: var(--green-dk);
+    }
+
+    .meal-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 14px 0;
+    }
+
+    /* ── Macro Summary Cards ── */
+    .macro-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .macro-card {
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      text-align: center;
+      border-top: 4px solid transparent;
+    }
+    .macro-card.cal  { background: #fff8ee; border-color: var(--amber); }
+    .macro-card.fat  { background: #fff0f0; border-color: var(--red); }
+    .macro-card.carb { background: #eef5ff; border-color: var(--blue); }
+    .macro-card.prot { background: #edfaf3; border-color: var(--green); }
+    .macro-card .macro-val {
+      font-size: 1.55rem;
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--text);
+    }
+    .macro-card .macro-unit { font-size: 0.7rem; color: var(--muted); margin-left: 1px; }
+    .macro-card .macro-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Results Table ── */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead tr {
+      background: #f7faf7;
+      border-bottom: 2px solid var(--border);
+    }
+    thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    thead th:first-child { width: 35%; }
+    tbody tr { border-bottom: 1px solid #f5f5f5; transition: background 0.1s; }
+    tbody tr:hover { background: #f7fdf9; }
+    tbody td {
+      padding: 10px 12px;
+      color: var(--text);
+    }
+    tbody td:first-child { font-weight: 600; text-transform: capitalize; }
+    tbody td:not(:first-child) { text-align: right; }
+    thead th:not(:first-child) { text-align: right; }
+
+    .totals-row td {
+      background: #edf7f0;
+      font-weight: 800;
+      font-size: 0.92rem;
+      border-top: 2px solid var(--green);
+      color: var(--green-dk);
+    }
+    .totals-row td:first-child { color: var(--text); }
+
+    /* ── History Panel ── */
+    .history-panel { position: sticky; top: 20px; }
+    .history-empty {
+      text-align: center;
+      padding: 20px 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .history-item {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.18s;
+      position: relative;
+    }
+    .history-item:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(46,204,113,0.15); }
+    .history-item.active {
+      border-color: var(--green);
+      background: #f0faf5;
+      border-left: 4px solid var(--green);
+    }
+    .history-item-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 24px;
+    }
+    .history-item-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .history-delete {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      padding: 3px 5px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .history-delete:hover { background: #fdf0ee; color: var(--danger); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #fff;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity 0.25s, transform 0.25s;
+      max-width: 320px;
+      box-shadow: var(--shadow-lg);
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: var(--green-dk); }
+    #toast.error   { background: var(--danger); }
+    #toast.warning { background: var(--amber); }
+
+    /* ── Storage warning banner ── */
+    #storage-banner {
+      background: #fff8e1;
+      border: 1px solid var(--warning);
+      color: #7d5b00;
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 8px 20px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 760px) {
+      main { grid-template-columns: 1fr; }
+      .right-col { order: -1; }
+      .history-panel { position: static; }
+      .macro-cards { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 440px) {
+      .macro-cards { grid-template-columns: repeat(2, 1fr); }
+      .btn-row { flex-direction: column; }
+      .btn-row .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="storage-banner" class="hidden">
+  Saving is unavailable in private/incognito mode — your data will not persist between sessions.
+</div>
+
+<header>
+  <div class="logo">&#x1F957;</div>
+  <div>
+    <h1>Calorie Tracker</h1>
+    <p>Track the nutritional value of your meals</p>
+  </div>
+</header>
+
+<main>
+  <!-- ══ Left Column ══ -->
+  <div class="left-col">
+
+    <!-- Input Panel -->
+    <section class="card">
+      <h2><span class="icon">&#x2795;</span> Add Food Item</h2>
+      <div class="form-group">
+        <label for="food-input">Food Name</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="food-input" autocomplete="off"
+                 placeholder="e.g. chicken breast, apple, brown rice…">
+          <ul id="autocomplete-list" class="autocomplete-list hidden"></ul>
+        </div>
+        <div id="food-error" class="error-msg"></div>
+      </div>
+      <div class="form-group">
+        <label for="gram-input">Quantity (grams)</label>
+        <input type="number" id="gram-input" min="0.1" step="0.1" placeholder="e.g. 150">
+        <div id="gram-error" class="error-msg"></div>
+      </div>
+      <button id="add-btn" class="btn btn-primary">+ Add to Meal</button>
+    </section>
+
+    <!-- Current Meal List -->
+    <section class="card">
+      <h2>
+        <span class="icon">&#x1F374;</span> Current Meal
+        <span id="item-count" class="badge">0 items</span>
+      </h2>
+      <div id="meal-list">
+        <div class="meal-empty">
+          <span class="meal-empty-icon">&#x1F964;</span>
+          No items yet — add a food above to get started.
+        </div>
+      </div>
+      <hr class="meal-divider">
+      <div class="form-group">
+        <label for="meal-name">Meal Label (optional)</label>
+        <input type="text" id="meal-name" placeholder="e.g. Post-workout Lunch, Breakfast…">
+      </div>
+      <div class="btn-row">
+        <button id="calculate-btn" class="btn btn-primary">&#x1F4CA; Nutritional Value</button>
+        <button id="save-btn" class="btn btn-secondary">&#x1F4BE; Save Meal</button>
+        <button id="new-btn" class="btn btn-ghost">&#x1F504; New Meal</button>
+      </div>
+    </section>
+
+    <!-- Results Panel -->
+    <section id="results-panel" class="card hidden">
+      <h2><span class="icon">&#x1F4CA;</span> Nutritional Breakdown</h2>
+      <div id="macro-cards" class="macro-cards"></div>
+      <div class="table-wrap">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th>Food Item</th>
+              <th>Grams</th>
+              <th>Calories</th>
+              <th>Fat (g)</th>
+              <th>Carbs (g)</th>
+              <th>Protein (g)</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══ Right Column: History ══ -->
+  <aside class="right-col">
+    <section class="card history-panel">
+      <h2><span class="icon">&#x1F4D1;</span> Saved Meals</h2>
+      <div id="history-list">
+        <div class="history-empty">No saved meals yet.<br>Save a meal to see it here.</div>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOD DATABASE  (values per 100 g)
+   { cal, fat, carbs, protein }
+═══════════════════════════════════════════════════════════════ */
+const FOOD_DB = {
+  // — Fruits —
+  'apple':               { cal: 52,  fat: 0.2, carbs: 14.0, protein: 0.3 },
+  'banana':              { cal: 89,  fat: 0.3, carbs: 23.0, protein: 1.1 },
+  'orange':              { cal: 47,  fat: 0.1, carbs: 12.0, protein: 0.9 },
+  'grapes':              { cal: 69,  fat: 0.2, carbs: 18.0, protein: 0.7 },
+  'strawberry':          { cal: 32,  fat: 0.3, carbs: 7.7,  protein: 0.7 },
+  'blueberry':           { cal: 57,  fat: 0.3, carbs: 14.0, protein: 0.7 },
+  'mango':               { cal: 60,  fat: 0.4, carbs: 15.0, protein: 0.8 },
+  'pineapple':           { cal: 50,  fat: 0.1, carbs: 13.0, protein: 0.5 },
+  'watermelon':          { cal: 30,  fat: 0.2, carbs: 7.6,  protein: 0.6 },
+  'avocado':             { cal: 160, fat: 15.0,carbs: 9.0,  protein: 2.0 },
+  'peach':               { cal: 39,  fat: 0.3, carbs: 10.0, protein: 0.9 },
+  'pear':                { cal: 57,  fat: 0.1, carbs: 15.0, protein: 0.4 },
+  'kiwi':                { cal: 61,  fat: 0.5, carbs: 15.0, protein: 1.1 },
+  'cherry':              { cal: 63,  fat: 0.2, carbs: 16.0, protein: 1.1 },
+  'raspberry':           { cal: 52,  fat: 0.7, carbs: 12.0, protein: 1.2 },
+  'lemon':               { cal: 29,  fat: 0.3, carbs: 9.0,  protein: 1.1 },
+  'lime':                { cal: 30,  fat: 0.2, carbs: 11.0, protein: 0.7 },
+  'papaya':              { cal: 43,  fat: 0.3, carbs: 11.0, protein: 0.5 },
+  'plum':                { cal: 46,  fat: 0.3, carbs: 11.0, protein: 0.7 },
+  'cantaloupe':          { cal: 34,  fat: 0.2, carbs: 8.0,  protein: 0.8 },
+  'coconut':             { cal: 354, fat: 33.0,carbs: 15.0, protein: 3.3 },
+
+  // — Vegetables —
+  'broccoli':            { cal: 34,  fat: 0.4, carbs: 7.0,  protein: 2.8 },
+  'spinach':             { cal: 23,  fat: 0.4, carbs: 3.6,  protein: 2.9 },
+  'carrot':              { cal: 41,  fat: 0.2, carbs: 10.0, protein: 0.9 },
+  'tomato':              { cal: 18,  fat: 0.2, carbs: 3.9,  protein: 0.9 },
+  'cucumber':            { cal: 15,  fat: 0.1, carbs: 3.6,  protein: 0.7 },
+  'lettuce':             { cal: 15,  fat: 0.2, carbs: 2.9,  protein: 1.4 },
+  'celery':              { cal: 16,  fat: 0.2, carbs: 3.0,  protein: 0.7 },
+  'onion':               { cal: 40,  fat: 0.1, carbs: 9.0,  protein: 1.1 },
+  'garlic':              { cal: 149, fat: 0.5, carbs: 33.0, protein: 6.4 },
+  'sweet potato':        { cal: 86,  fat: 0.1, carbs: 20.0, protein: 1.6 },
+  'potato':              { cal: 77,  fat: 0.1, carbs: 17.0, protein: 2.0 },
+  'bell pepper red':     { cal: 31,  fat: 0.3, carbs: 6.0,  protein: 1.0 },
+  'bell pepper green':   { cal: 20,  fat: 0.2, carbs: 4.6,  protein: 0.9 },
+  'cauliflower':         { cal: 25,  fat: 0.3, carbs: 5.0,  protein: 1.9 },
+  'zucchini':            { cal: 17,  fat: 0.3, carbs: 3.1,  protein: 1.2 },
+  'asparagus':           { cal: 20,  fat: 0.1, carbs: 3.9,  protein: 2.2 },
+  'kale':                { cal: 49,  fat: 0.9, carbs: 9.0,  protein: 4.3 },
+  'cabbage':             { cal: 25,  fat: 0.1, carbs: 6.0,  protein: 1.3 },
+  'mushroom':            { cal: 22,  fat: 0.3, carbs: 3.3,  protein: 3.1 },
+  'corn':                { cal: 86,  fat: 1.4, carbs: 19.0, protein: 3.3 },
+  'peas':                { cal: 81,  fat: 0.4, carbs: 14.0, protein: 5.4 },
+  'beet':                { cal: 43,  fat: 0.2, carbs: 10.0, protein: 1.6 },
+  'radish':              { cal: 16,  fat: 0.1, carbs: 3.4,  protein: 0.7 },
+  'eggplant':            { cal: 25,  fat: 0.2, carbs: 6.0,  protein: 1.0 },
+  'leek':                { cal: 61,  fat: 0.3, carbs: 14.0, protein: 1.5 },
+
+  // — Meat & Fish —
+  'chicken breast':      { cal: 165, fat: 3.6, carbs: 0.0,  protein: 31.0 },
+  'chicken thigh':       { cal: 209, fat: 13.0,carbs: 0.0,  protein: 26.0 },
+  'ground beef':         { cal: 254, fat: 20.0,carbs: 0.0,  protein: 17.0 },
+  'ground turkey':       { cal: 189, fat: 11.0,carbs: 0.0,  protein: 22.0 },
+  'salmon':              { cal: 208, fat: 13.0,carbs: 0.0,  protein: 20.0 },
+  'tuna':                { cal: 116, fat: 2.5, carbs: 0.0,  protein: 26.0 },
+  'shrimp':              { cal: 99,  fat: 1.7, carbs: 0.9,  protein: 24.0 },
+  'tilapia':             { cal: 96,  fat: 2.7, carbs: 0.0,  protein: 20.0 },
+  'pork tenderloin':     { cal: 143, fat: 3.5, carbs: 0.0,  protein: 26.0 },
+  'bacon':               { cal: 541, fat: 42.0,carbs: 1.4,  protein: 37.0 },
+  'ham':                 { cal: 145, fat: 7.5, carbs: 1.5,  protein: 19.0 },
+  'steak':               { cal: 207, fat: 10.0,carbs: 0.0,  protein: 30.0 },
+  'cod':                 { cal: 82,  fat: 0.7, carbs: 0.0,  protein: 18.0 },
+  'sardine':             { cal: 208, fat: 11.0,carbs: 0.0,  protein: 25.0 },
+  'egg':                 { cal: 155, fat: 11.0,carbs: 1.1,  protein: 13.0 },
+  'egg white':           { cal: 52,  fat: 0.2, carbs: 0.7,  protein: 11.0 },
+  'tofu':                { cal: 76,  fat: 4.8, carbs: 1.9,  protein: 8.0  },
+  'tempeh':              { cal: 195, fat: 11.0,carbs: 9.4,  protein: 20.0 },
+  'duck breast':         { cal: 201, fat: 11.0,carbs: 0.0,  protein: 28.0 },
+  'lamb':                { cal: 294, fat: 21.0,carbs: 0.0,  protein: 25.0 },
+
+  // — Grains & Bread —
+  'white rice':          { cal: 130, fat: 0.3, carbs: 28.0, protein: 2.7 },
+  'brown rice':          { cal: 112, fat: 0.9, carbs: 24.0, protein: 2.3 },
+  'oats':                { cal: 389, fat: 7.0, carbs: 66.0, protein: 17.0 },
+  'oatmeal':             { cal: 71,  fat: 1.4, carbs: 12.0, protein: 2.5 },
+  'white bread':         { cal: 265, fat: 3.2, carbs: 49.0, protein: 9.0 },
+  'whole wheat bread':   { cal: 247, fat: 3.4, carbs: 41.0, protein: 13.0 },
+  'pasta':               { cal: 131, fat: 1.1, carbs: 25.0, protein: 5.0 },
+  'quinoa':              { cal: 120, fat: 1.9, carbs: 21.0, protein: 4.4 },
+  'barley':              { cal: 123, fat: 0.4, carbs: 28.0, protein: 2.3 },
+  'cornmeal':            { cal: 362, fat: 3.6, carbs: 77.0, protein: 8.1 },
+  'flour tortilla':      { cal: 312, fat: 8.0, carbs: 50.0, protein: 8.0 },
+  'corn tortilla':       { cal: 218, fat: 2.5, carbs: 46.0, protein: 5.7 },
+  'bagel':               { cal: 250, fat: 1.5, carbs: 49.0, protein: 10.0 },
+  'english muffin':      { cal: 227, fat: 1.7, carbs: 44.0, protein: 8.4 },
+  'pita bread':          { cal: 275, fat: 1.2, carbs: 55.0, protein: 9.1 },
+  'croissant':           { cal: 406, fat: 21.0,carbs: 46.0, protein: 8.2 },
+  'granola':             { cal: 471, fat: 20.0,carbs: 64.0, protein: 10.0 },
+  'corn flakes':         { cal: 357, fat: 0.4, carbs: 84.0, protein: 7.5 },
+
+  // — Dairy —
+  'whole milk':          { cal: 61,  fat: 3.3, carbs: 4.8,  protein: 3.2 },
+  'skim milk':           { cal: 34,  fat: 0.1, carbs: 5.0,  protein: 3.4 },
+  'greek yogurt':        { cal: 59,  fat: 0.4, carbs: 3.6,  protein: 10.0 },
+  'plain yogurt':        { cal: 61,  fat: 3.3, carbs: 4.7,  protein: 3.5 },
+  'cheddar cheese':      { cal: 403, fat: 33.0,carbs: 1.3,  protein: 25.0 },
+  'mozzarella':          { cal: 280, fat: 17.0,carbs: 2.2,  protein: 28.0 },
+  'cottage cheese':      { cal: 98,  fat: 4.3, carbs: 3.4,  protein: 11.0 },
+  'cream cheese':        { cal: 342, fat: 34.0,carbs: 4.1,  protein: 6.0  },
+  'butter':              { cal: 717, fat: 81.0,carbs: 0.1,  protein: 0.9  },
+  'heavy cream':         { cal: 340, fat: 36.0,carbs: 2.8,  protein: 2.8  },
+  'sour cream':          { cal: 193, fat: 19.0,carbs: 4.6,  protein: 2.1  },
+  'parmesan':            { cal: 431, fat: 29.0,carbs: 4.0,  protein: 38.0 },
+  'swiss cheese':        { cal: 380, fat: 28.0,carbs: 5.4,  protein: 27.0 },
+  'ice cream':           { cal: 207, fat: 11.0,carbs: 24.0, protein: 3.5  },
+  'half and half':       { cal: 130, fat: 12.0,carbs: 4.3,  protein: 3.0  },
+
+  // — Nuts & Seeds —
+  'almonds':             { cal: 579, fat: 50.0,carbs: 22.0, protein: 21.0 },
+  'cashews':             { cal: 553, fat: 44.0,carbs: 30.0, protein: 18.0 },
+  'peanuts':             { cal: 567, fat: 49.0,carbs: 16.0, protein: 26.0 },
+  'walnuts':             { cal: 654, fat: 65.0,carbs: 14.0, protein: 15.0 },
+  'pistachios':          { cal: 560, fat: 45.0,carbs: 28.0, protein: 20.0 },
+  'pecans':              { cal: 691, fat: 72.0,carbs: 14.0, protein: 9.2  },
+  'macadamia nuts':      { cal: 718, fat: 76.0,carbs: 14.0, protein: 7.9  },
+  'sunflower seeds':     { cal: 584, fat: 51.0,carbs: 20.0, protein: 21.0 },
+  'pumpkin seeds':       { cal: 559, fat: 49.0,carbs: 10.0, protein: 30.0 },
+  'chia seeds':          { cal: 486, fat: 31.0,carbs: 42.0, protein: 17.0 },
+  'flaxseeds':           { cal: 534, fat: 42.0,carbs: 29.0, protein: 18.0 },
+  'peanut butter':       { cal: 588, fat: 50.0,carbs: 20.0, protein: 25.0 },
+  'almond butter':       { cal: 614, fat: 56.0,carbs: 19.0, protein: 21.0 },
+  'tahini':              { cal: 595, fat: 54.0,carbs: 21.0, protein: 17.0 },
+
+  // — Oils & Fats —
+  'olive oil':           { cal: 884, fat: 100.0,carbs: 0.0, protein: 0.0 },
+  'coconut oil':         { cal: 862, fat: 100.0,carbs: 0.0, protein: 0.0 },
+  'vegetable oil':       { cal: 884, fat: 100.0,carbs: 0.0, protein: 0.0 },
+  'mayonnaise':          { cal: 680, fat: 75.0, carbs: 0.6, protein: 1.0 },
+
+  // — Legumes —
+  'black beans':         { cal: 132, fat: 0.5, carbs: 24.0, protein: 8.9  },
+  'chickpeas':           { cal: 164, fat: 2.6, carbs: 27.0, protein: 8.9  },
+  'lentils':             { cal: 116, fat: 0.4, carbs: 20.0, protein: 9.0  },
+  'kidney beans':        { cal: 127, fat: 0.5, carbs: 23.0, protein: 8.7  },
+  'pinto beans':         { cal: 143, fat: 0.7, carbs: 27.0, protein: 9.0  },
+  'edamame':             { cal: 122, fat: 5.2, carbs: 9.9,  protein: 11.0 },
+  'hummus':              { cal: 177, fat: 10.0,carbs: 20.0, protein: 5.0  },
+  'split peas':          { cal: 116, fat: 0.4, carbs: 21.0, protein: 8.3  },
+  'white beans':         { cal: 139, fat: 0.4, carbs: 25.0, protein: 10.0 },
+  'soybeans':            { cal: 173, fat: 9.0, carbs: 10.0, protein: 17.0 },
+
+  // — Fast Food & Packaged —
+  'french fries':        { cal: 312, fat: 15.0,carbs: 41.0, protein: 3.4  },
+  'pizza':               { cal: 266, fat: 10.0,carbs: 33.0, protein: 12.0 },
+  'hamburger patty':     { cal: 295, fat: 20.0,carbs: 0.0,  protein: 28.0 },
+  'hot dog':             { cal: 290, fat: 26.0,carbs: 2.0,  protein: 11.0 },
+  'potato chips':        { cal: 536, fat: 35.0,carbs: 53.0, protein: 7.0  },
+  'chocolate chip cookie':{ cal: 488, fat: 23.0,carbs: 65.0, protein: 5.7 },
+  'white sugar':         { cal: 387, fat: 0.0, carbs: 100.0,protein: 0.0  },
+  'honey':               { cal: 304, fat: 0.0, carbs: 82.0, protein: 0.3  },
+  'ketchup':             { cal: 112, fat: 0.1, carbs: 27.0, protein: 1.3  },
+  'ranch dressing':      { cal: 139, fat: 14.0,carbs: 2.4,  protein: 1.3  },
+  'caesar dressing':     { cal: 290, fat: 30.0,carbs: 2.3,  protein: 2.6  },
+  'soy sauce':           { cal: 53,  fat: 0.1, carbs: 5.0,  protein: 8.1  },
+  'salsa':               { cal: 36,  fat: 0.2, carbs: 7.7,  protein: 1.4  },
+  'dark chocolate':      { cal: 546, fat: 31.0,carbs: 60.0, protein: 5.0  },
+  'protein bar':         { cal: 350, fat: 10.0,carbs: 45.0, protein: 25.0 },
+
+  // — Beverages —
+  'orange juice':        { cal: 45,  fat: 0.2, carbs: 10.0, protein: 0.7 },
+  'apple juice':         { cal: 46,  fat: 0.1, carbs: 11.0, protein: 0.1 },
+  'cola':                { cal: 41,  fat: 0.0, carbs: 11.0, protein: 0.0 },
+  'coffee':              { cal: 2,   fat: 0.0, carbs: 0.0,  protein: 0.3 },
+  'beer':                { cal: 43,  fat: 0.0, carbs: 3.6,  protein: 0.5 },
+  'red wine':            { cal: 85,  fat: 0.0, carbs: 2.6,  protein: 0.1 },
+  'white wine':          { cal: 82,  fat: 0.0, carbs: 2.6,  protein: 0.1 },
+  'green tea':           { cal: 1,   fat: 0.0, carbs: 0.2,  protein: 0.2 },
+  'sports drink':        { cal: 26,  fat: 0.0, carbs: 7.0,  protein: 0.0 },
+  'almond milk':         { cal: 17,  fat: 1.0, carbs: 1.5,  protein: 0.6 },
+  'oat milk':            { cal: 50,  fat: 1.5, carbs: 9.0,  protein: 1.0 },
+
+  // — Condiments & Extras —
+  'balsamic vinegar':    { cal: 88,  fat: 0.0, carbs: 17.0, protein: 0.5 },
+  'mustard':             { cal: 66,  fat: 4.0, carbs: 6.0,  protein: 3.7 },
+  'hot sauce':           { cal: 11,  fat: 0.4, carbs: 1.3,  protein: 0.6 },
+  'maple syrup':         { cal: 260, fat: 0.1, carbs: 67.0, protein: 0.0 },
+  'jam':                 { cal: 278, fat: 0.1, carbs: 69.0, protein: 0.4 },
+  'nutella':             { cal: 547, fat: 31.0,carbs: 58.0, protein: 6.3 },
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  currentMeal: [],      // [{ id, name, grams }]
+  lastResults: null,    // { items: [...], totals: {...} }
+  history: [],          // [MealEntry]
+  loadedMealId: null,   // UUID of meal loaded from history
+  acHighlight: -1,      // index in autocomplete list
+  storageOk: true,
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   DOM REFS
+═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+let foodInput, gramInput, acList, foodError, gramError,
+    mealList, itemCount, mealNameInput,
+    addBtn, calculateBtn, saveBtn, newBtn,
+    resultsPanel, macrCards, resultsTbody,
+    historyList, toast, storageBanner;
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+function uid() {
+  try { return crypto.randomUUID(); }
+  catch { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+}
+
+function round1(n) { return Math.round(n * 10) / 10; }
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function fmtTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function autoLabel() {
+  const now = new Date();
+  return `Meal — ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECURITY: HTML ESCAPE
+   Applied to any user-supplied string rendered via innerHTML.
+═══════════════════════════════════════════════════════════════ */
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, type = 'success') {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.className = `show ${type}`;
+  toastTimer = setTimeout(() => { toast.className = ''; }, 2800);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ERROR HELPERS
+═══════════════════════════════════════════════════════════════ */
+function setError(el, input, msg) {
+  el.textContent = msg;
+  input.classList.add('error-border');
+}
+function clearError(el, input) {
+  el.textContent = '';
+  input.classList.remove('error-border');
+}
+function clearAllErrors() {
+  clearError(foodError, foodInput);
+  clearError(gramError, gramInput);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTOCOMPLETE
+═══════════════════════════════════════════════════════════════ */
+function getMatches(q) {
+  const lq = q.toLowerCase().trim();
+  if (!lq) return [];
+  const keys = Object.keys(FOOD_DB);
+  const starts = keys.filter(k => k.startsWith(lq));
+  const contains = keys.filter(k => !k.startsWith(lq) && k.includes(lq));
+  return [...starts, ...contains].slice(0, 9);
+}
+
+function renderAutocomplete(matches) {
+  if (!matches.length) { closeAutocomplete(); return; }
+  state.acHighlight = -1;
+  acList.innerHTML = matches.map((name, i) =>
+    `<li data-name="${name}" data-idx="${i}">
+       <span class="ac-icon">&#x1F9C0;</span>
+       <span>${name}</span>
+     </li>`
+  ).join('');
+  acList.classList.remove('hidden');
+  acList.querySelectorAll('li').forEach(li => {
+    li.addEventListener('mousedown', e => {
+      e.preventDefault();
+      selectFood(li.dataset.name);
+    });
+    li.addEventListener('mouseover', () => {
+      state.acHighlight = +li.dataset.idx;
+      highlightAc();
+    });
+  });
+}
+
+function highlightAc() {
+  acList.querySelectorAll('li').forEach((li, i) => {
+    li.classList.toggle('highlighted', i === state.acHighlight);
+  });
+}
+
+function selectFood(name) {
+  foodInput.value = name;
+  closeAutocomplete();
+  clearError(foodError, foodInput);
+  gramInput.focus();
+}
+
+function closeAutocomplete() {
+  acList.classList.add('hidden');
+  acList.innerHTML = '';
+  state.acHighlight = -1;
+}
+
+function navigateAc(dir) {
+  const items = acList.querySelectorAll('li');
+  if (!items.length) return;
+  state.acHighlight = Math.max(-1, Math.min(items.length - 1, state.acHighlight + dir));
+  highlightAc();
+  if (state.acHighlight >= 0) {
+    foodInput.value = items[state.acHighlight].dataset.name;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MEAL MANAGEMENT
+═══════════════════════════════════════════════════════════════ */
+function addItem() {
+  clearAllErrors();
+  const name = foodInput.value.trim().toLowerCase();
+  const grams = parseFloat(gramInput.value);
+
+  let ok = true;
+  if (!name) {
+    setError(foodError, foodInput, 'Please enter a food name.');
+    ok = false;
+  } else if (!FOOD_DB[name]) {
+    setError(foodError, foodInput, `"${name}" not found. Try autocomplete or check spelling.`);
+    ok = false;
+  }
+  if (isNaN(grams) || gramInput.value === '') {
+    setError(gramError, gramInput, 'Please enter a quantity in grams.');
+    ok = false;
+  } else if (grams <= 0) {
+    setError(gramError, gramInput, 'Quantity must be greater than 0.');
+    ok = false;
+  }
+  if (!ok) return;
+
+  state.currentMeal.push({ id: uid(), name, grams });
+  state.lastResults = null;
+  renderMealList();
+  resultsPanel.classList.add('hidden');
+  foodInput.value = '';
+  gramInput.value = '';
+  closeAutocomplete();
+  foodInput.focus();
+}
+
+function removeItem(id) {
+  state.currentMeal = state.currentMeal.filter(i => i.id !== id);
+  state.lastResults = null;
+  renderMealList();
+  resultsPanel.classList.add('hidden');
+}
+
+function clearMeal() {
+  state.currentMeal = [];
+  state.lastResults = null;
+  state.loadedMealId = null;
+  mealNameInput.value = '';
+  renderMealList();
+  resultsPanel.classList.add('hidden');
+  renderHistory();
+  foodInput.focus();
+}
+
+function loadMeal(entry) {
+  state.currentMeal = entry.items
+    .filter(i => FOOD_DB[i.name])
+    .map(i => ({ id: uid(), name: i.name, grams: i.grams }));
+  state.lastResults = entry.results || null;
+  state.loadedMealId = entry.id;
+  mealNameInput.value = entry.label || '';
+  renderMealList();
+
+  if (state.lastResults) {
+    renderResults(state.lastResults);
+    resultsPanel.classList.remove('hidden');
+    setTimeout(() => resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+  } else {
+    resultsPanel.classList.add('hidden');
+  }
+  renderHistory();
+  try { localStorage.setItem('calorieTracker_lastMealId', entry.id); } catch {}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CALCULATION
+═══════════════════════════════════════════════════════════════ */
+function computeItem(item) {
+  const d = FOOD_DB[item.name];
+  const f = item.grams / 100;
+  return {
+    name: item.name,
+    grams: item.grams,
+    cal:     round1(d.cal     * f),
+    fat:     round1(d.fat     * f),
+    carbs:   round1(d.carbs   * f),
+    protein: round1(d.protein * f),
+  };
+}
+
+function sumTotals(items) {
+  return {
+    cal:     round1(items.reduce((s, i) => s + i.cal,     0)),
+    fat:     round1(items.reduce((s, i) => s + i.fat,     0)),
+    carbs:   round1(items.reduce((s, i) => s + i.carbs,   0)),
+    protein: round1(items.reduce((s, i) => s + i.protein, 0)),
+  };
+}
+
+function calculateNutrition() {
+  if (!state.currentMeal.length) {
+    showToast('Add at least one food item first.', 'warning');
+    return null;
+  }
+  const items = state.currentMeal.map(computeItem);
+  const totals = sumTotals(items);
+  const results = { items, totals };
+  state.lastResults = results;
+  renderResults(results);
+  resultsPanel.classList.remove('hidden');
+  setTimeout(() => resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+  return results;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════════════════ */
+function renderMealList() {
+  const count = state.currentMeal.length;
+  itemCount.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
+
+  if (!count) {
+    mealList.innerHTML = `
+      <div class="meal-empty">
+        <span class="meal-empty-icon">&#x1F964;</span>
+        No items yet — add a food above to get started.
+      </div>`;
+    return;
+  }
+
+  mealList.innerHTML = state.currentMeal.map(item => `
+    <div class="meal-item">
+      <span class="meal-item-name" title="${item.name}">${item.name}</span>
+      <span class="meal-item-grams">${item.grams}g</span>
+      <button class="btn btn-danger" onclick="removeItem('${item.id}')">&#x2715;</button>
+    </div>
+  `).join('');
+}
+
+function renderResults(results) {
+  // Macro summary cards
+  const cards = [
+    { cls: 'cal',  label: 'Calories',    val: results.totals.cal,     unit: 'kcal' },
+    { cls: 'fat',  label: 'Total Fat',   val: results.totals.fat,     unit: 'g' },
+    { cls: 'carb', label: 'Total Carbs', val: results.totals.carbs,   unit: 'g' },
+    { cls: 'prot', label: 'Protein',     val: results.totals.protein, unit: 'g' },
+  ];
+  macrCards.innerHTML = cards.map(c => `
+    <div class="macro-card ${c.cls}">
+      <div class="macro-val">${c.val}<span class="macro-unit">${c.unit}</span></div>
+      <div class="macro-label">${c.label}</div>
+    </div>
+  `).join('');
+
+  // Results table body
+  resultsTbody.innerHTML = results.items.map(item => `
+    <tr>
+      <td>${item.name}</td>
+      <td style="text-align:right">${item.grams}</td>
+      <td style="text-align:right">${item.cal}</td>
+      <td style="text-align:right">${item.fat}</td>
+      <td style="text-align:right">${item.carbs}</td>
+      <td style="text-align:right">${item.protein}</td>
+    </tr>
+  `).join('') + `
+    <tr class="totals-row">
+      <td>TOTAL</td>
+      <td style="text-align:right">${results.items.reduce((s,i)=>s+i.grams,0)}g</td>
+      <td style="text-align:right">${results.totals.cal}</td>
+      <td style="text-align:right">${results.totals.fat}</td>
+      <td style="text-align:right">${results.totals.carbs}</td>
+      <td style="text-align:right">${results.totals.protein}</td>
+    </tr>
+  `;
+}
+
+function renderHistory() {
+  if (!state.history.length) {
+    historyList.innerHTML = '<div class="history-empty">No saved meals yet.<br>Save a meal to see it here.</div>';
+    return;
+  }
+  historyList.innerHTML = state.history.map(entry => {
+    const active = entry.id === state.loadedMealId ? 'active' : '';
+    const cal = entry.results ? entry.results.totals.cal : '—';
+    const count = entry.items.length;
+    return `
+      <div class="history-item ${active}" data-id="${entry.id}" onclick="loadMeal(state.history.find(h=>h.id==='${entry.id}'))">
+        <div class="history-item-label">${entry.label || 'Unnamed Meal'}</div>
+        <div class="history-item-meta">${fmtDate(entry.savedAt)} &middot; ${count} item${count!==1?'s':''} &middot; ${cal} kcal</div>
+        <button class="history-delete" title="Delete" onclick="event.stopPropagation();deleteSavedMeal('${entry.id}')">&#x2715;</button>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════════════════════ */
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem('calorieTracker_meals');
+    state.history = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(state.history)) state.history = [];
+  } catch {
+    state.history = [];
+  }
+}
+
+function persistHistory() {
+  if (!state.storageOk) return;
+  try {
+    localStorage.setItem('calorieTracker_meals', JSON.stringify(state.history));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      showToast('Storage full. Delete old meals to save new ones.', 'error');
+    }
+  }
+}
+
+function saveMeal() {
+  if (!state.currentMeal.length) {
+    showToast('Add food items before saving.', 'warning');
+    return;
+  }
+  let results = state.lastResults;
+  if (!results) {
+    results = calculateNutrition();
+    if (!results) return;
+  }
+
+  const label = mealNameInput.value.trim() || autoLabel();
+  const now = new Date().toISOString();
+
+  const entry = {
+    id: state.loadedMealId || uid(),
+    label,
+    savedAt: now,
+    items: state.currentMeal.map(i => ({ name: i.name, grams: i.grams })),
+    results,
+  };
+
+  const existingIdx = state.history.findIndex(h => h.id === entry.id);
+  if (existingIdx >= 0) {
+    state.history[existingIdx] = entry;
+  } else {
+    state.history.unshift(entry);
+    if (state.history.length > 20) state.history.pop();
+  }
+
+  state.loadedMealId = entry.id;
+  mealNameInput.value = entry.label;
+  persistHistory();
+  try { localStorage.setItem('calorieTracker_lastMealId', entry.id); } catch {}
+  renderHistory();
+  showToast(`Meal "${entry.label}" saved!`, 'success');
+}
+
+function deleteSavedMeal(id) {
+  state.history = state.history.filter(h => h.id !== id);
+  if (state.loadedMealId === id) {
+    state.loadedMealId = null;
+  }
+  persistHistory();
+  renderHistory();
+  showToast('Meal deleted.', 'warning');
+}
+
+function loadLastSession() {
+  try {
+    const lastId = localStorage.getItem('calorieTracker_lastMealId');
+    if (lastId) {
+      const entry = state.history.find(h => h.id === lastId);
+      if (entry) { loadMeal(entry); return; }
+    }
+  } catch {}
+}
+
+function checkStorageAvailable() {
+  try {
+    localStorage.setItem('__ct_test__', '1');
+    localStorage.removeItem('__ct_test__');
+    state.storageOk = true;
+  } catch {
+    state.storageOk = false;
+    storageBanner.classList.remove('hidden');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  foodInput      = $('food-input');
+  gramInput      = $('gram-input');
+  acList         = $('autocomplete-list');
+  foodError      = $('food-error');
+  gramError      = $('gram-error');
+  mealList       = $('meal-list');
+  itemCount      = $('item-count');
+  mealNameInput  = $('meal-name');
+  addBtn         = $('add-btn');
+  calculateBtn   = $('calculate-btn');
+  saveBtn        = $('save-btn');
+  newBtn         = $('new-btn');
+  resultsPanel   = $('results-panel');
+  macrCards      = $('macro-cards');
+  resultsTbody   = $('results-tbody');
+  historyList    = $('history-list');
+  toast          = $('toast');
+  storageBanner  = $('storage-banner');
+
+  checkStorageAvailable();
+  loadHistory();
+  renderHistory();
+  loadLastSession();
+
+  if (!state.currentMeal.length) renderMealList();
+
+  // — Food input: autocomplete —
+  foodInput.addEventListener('input', () => {
+    const q = foodInput.value;
+    if (q.length >= 1) renderAutocomplete(getMatches(q));
+    else closeAutocomplete();
+    clearError(foodError, foodInput);
+  });
+
+  foodInput.addEventListener('keydown', e => {
+    if (acList.classList.contains('hidden')) {
+      if (e.key === 'Enter') addItem();
+      return;
+    }
+    if (e.key === 'ArrowDown') { e.preventDefault(); navigateAc(1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); navigateAc(-1); }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      const highlighted = acList.querySelector('li.highlighted');
+      if (highlighted) selectFood(highlighted.dataset.name);
+      else { closeAutocomplete(); addItem(); }
+    }
+    else if (e.key === 'Escape') closeAutocomplete();
+  });
+
+  document.addEventListener('click', e => {
+    if (!foodInput.contains(e.target) && !acList.contains(e.target)) {
+      closeAutocomplete();
+    }
+  });
+
+  // — Gram input: Enter to add —
+  gramInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') addItem();
+  });
+  gramInput.addEventListener('input', () => clearError(gramError, gramInput));
+
+  // — Buttons —
+  addBtn.addEventListener('click', addItem);
+  calculateBtn.addEventListener('click', calculateNutrition);
+  saveBtn.addEventListener('click', saveMeal);
+  newBtn.addEventListener('click', clearMeal);
+});
+
+// Expose globals needed for inline onclick handlers
+window.removeItem = removeItem;
+window.loadMeal = loadMeal;
+window.deleteSavedMeal = deleteSavedMeal;
+window.state = state;
+</script>
+</body>
+</html>
