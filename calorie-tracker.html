@@ -429,15 +429,15 @@
       align-self: flex-end;
     }
     .unit-btn {
-      padding: 0 11px;
+      padding: 0 8px;
       border: none;
       background: #f7faf7;
       color: var(--muted);
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
     }
     .unit-btn + .unit-btn { border-left: 1.5px solid var(--border); }
     .unit-btn.active {
@@ -513,6 +513,7 @@
           <button class="unit-btn" id="unit-kg">kg</button>
           <button class="unit-btn" id="unit-oz">oz</button>
           <button class="unit-btn" id="unit-lbs">lbs</button>
+          <button class="unit-btn" id="unit-pcs">pcs</button>
         </div>
       </div>
       <div id="convert-hint" class="convert-hint hidden"></div>
@@ -781,7 +782,7 @@ const state = {
   loadedMealId: null,   // UUID of meal loaded from history
   acHighlight: -1,      // index in autocomplete list
   storageOk: true,
-  unitMode: 'g',        // 'g' | 'kg' | 'oz' | 'lbs'
+  unitMode: 'g',        // 'g' | 'kg' | 'oz' | 'lbs' | 'pcs'
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -793,7 +794,7 @@ let foodInput, gramInput, acList, foodError, gramError,
     addBtn, calculateBtn, saveBtn, newBtn,
     resultsPanel, macrCards, resultsTbody,
     historyList, toast, storageBanner,
-    unitGBtn, unitKgBtn, unitOzBtn, unitLbsBtn, convertHint, gramLabel;
+    unitGBtn, unitKgBtn, unitOzBtn, unitLbsBtn, unitPcsBtn, convertHint, gramLabel;
 
 /* ═══════════════════════════════════════════════════════════════
    UTILITIES
@@ -930,11 +931,11 @@ const UNIT_TO_GRAMS = { g: 1, kg: 1000, oz: 28.3495, lbs: 453.592 };
 
 function setUnitMode(mode) {
   state.unitMode = mode;
-  const btnMap = { g: unitGBtn, kg: unitKgBtn, oz: unitOzBtn, lbs: unitLbsBtn };
+  const btnMap = { g: unitGBtn, kg: unitKgBtn, oz: unitOzBtn, lbs: unitLbsBtn, pcs: unitPcsBtn };
   Object.values(btnMap).forEach(b => b.classList.remove('active'));
   btnMap[mode].classList.add('active');
-  const labels = { g: 'Quantity (grams)', kg: 'Quantity (kg)', oz: 'Quantity (oz)', lbs: 'Quantity (lbs)' };
-  const placeholders = { g: 'e.g. 150', kg: 'e.g. 0.15', oz: 'e.g. 5.3', lbs: 'e.g. 0.33' };
+  const labels = { g: 'Quantity (grams)', kg: 'Quantity (kg)', oz: 'Quantity (oz)', lbs: 'Quantity (lbs)', pcs: 'Number of pieces' };
+  const placeholders = { g: 'e.g. 150', kg: 'e.g. 0.15', oz: 'e.g. 5.3', lbs: 'e.g. 0.33', pcs: 'e.g. 15' };
   gramLabel.textContent = labels[mode];
   gramInput.placeholder = placeholders[mode];
   gramInput.value = '';
@@ -943,11 +944,28 @@ function setUnitMode(mode) {
 
 function updateConvertHint() {
   if (state.unitMode === 'g') { convertHint.classList.add('hidden'); return; }
+
+  if (state.unitMode === 'pcs') {
+    const name = foodInput.value.trim().toLowerCase();
+    if (!name || !FOOD_DB[name]) { convertHint.classList.add('hidden'); return; }
+    const db = FOOD_DB[name];
+    convertHint.className = 'convert-hint';
+    if (db.perItem) {
+      convertHint.style.cssText = '';
+      convertHint.innerHTML = `&#x2139;&#xFE0F; 1 ${db.itemLabel || 'piece'} ≈ <strong>${db.perItem} g</strong>`;
+    } else {
+      convertHint.style.cssText = 'background:#fff8ee;border-color:#f39c12;color:#7d5b00';
+      convertHint.innerHTML = `&#x26A0;&#xFE0F; Per-piece weight unavailable for <strong>${esc(name)}</strong> — use grams mode.`;
+    }
+    return;
+  }
+
   const val = parseFloat(gramInput.value);
   if (!val || val <= 0) { convertHint.classList.add('hidden'); return; }
   const grams = round1(val * UNIT_TO_GRAMS[state.unitMode]);
   convertHint.className = 'convert-hint';
-  convertHint.innerHTML = `&#x2139;&#xFE0F; ${val} ${state.unitMode} = <strong>${grams} g</strong>`;
+  convertHint.style.cssText = '';
+  convertHint.innerHTML = `&#x2139;&#xFE0F; ${val} ${state.unitMode} = <strong>${grams} g</strong>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -967,7 +985,8 @@ function addItem() {
     ok = false;
   }
   if (isNaN(qty) || gramInput.value === '') {
-    setError(gramError, gramInput, state.unitMode === 'g' ? 'Please enter a quantity in grams.' : `Please enter a quantity in ${state.unitMode}.`);
+    const unitLabel = state.unitMode === 'g' ? 'grams' : state.unitMode === 'pcs' ? 'pieces' : state.unitMode;
+    setError(gramError, gramInput, `Please enter a quantity in ${unitLabel}.`);
     ok = false;
   } else if (qty <= 0) {
     setError(gramError, gramInput, 'Quantity must be greater than 0.');
@@ -975,7 +994,17 @@ function addItem() {
   }
   if (!ok) return;
 
-  const grams = round1(qty * UNIT_TO_GRAMS[state.unitMode]);
+  let grams;
+  if (state.unitMode === 'pcs') {
+    const db = FOOD_DB[name];
+    if (!db.perItem) {
+      setError(gramError, gramInput, `Per-piece weight not available for "${name}". Use grams mode instead.`);
+      return;
+    }
+    grams = round1(qty * db.perItem);
+  } else {
+    grams = round1(qty * UNIT_TO_GRAMS[state.unitMode]);
+  }
 
   state.currentMeal.push({ id: uid(), name, grams });
   state.lastResults = null;
@@ -1266,6 +1295,7 @@ document.addEventListener('DOMContentLoaded', () => {
   unitKgBtn      = $('unit-kg');
   unitOzBtn      = $('unit-oz');
   unitLbsBtn     = $('unit-lbs');
+  unitPcsBtn     = $('unit-pcs');
   convertHint    = $('convert-hint');
   gramLabel      = $('gram-label');
 
@@ -1281,6 +1311,7 @@ document.addEventListener('DOMContentLoaded', () => {
   unitKgBtn.addEventListener('click',  () => setUnitMode('kg'));
   unitOzBtn.addEventListener('click',  () => setUnitMode('oz'));
   unitLbsBtn.addEventListener('click', () => setUnitMode('lbs'));
+  unitPcsBtn.addEventListener('click', () => setUnitMode('pcs'));
 
   // — Food input: autocomplete —
   foodInput.addEventListener('input', () => {
@@ -1288,6 +1319,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (q.length >= 1) renderAutocomplete(getMatches(q));
     else closeAutocomplete();
     clearError(foodError, foodInput);
+    updateConvertHint();
   });
 
   foodInput.addEventListener('keydown', e => {
