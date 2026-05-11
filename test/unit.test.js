@@ -516,6 +516,55 @@ describe('real-world meal scenarios', () => {
   });
 });
 
+describe('weight unit conversion (UNIT_TO_GRAMS)', () => {
+  const UNIT_TO_GRAMS = { g: 1, kg: 1000, oz: 28.3495, lbs: 453.592 };
+
+  function toGrams(val, unit) {
+    return round1(val * UNIT_TO_GRAMS[unit]);
+  }
+
+  test('grams mode: 1 g = 1 g', () => {
+    assert.equal(toGrams(1, 'g'), 1);
+  });
+
+  test('kg: 1 kg = 1000 g', () => {
+    assert.equal(toGrams(1, 'kg'), 1000);
+  });
+
+  test('kg: 0.15 kg = 150 g', () => {
+    assert.equal(toGrams(0.15, 'kg'), 150);
+  });
+
+  test('oz: 1 oz ≈ 28.3 g', () => {
+    assert.equal(toGrams(1, 'oz'), 28.3);
+  });
+
+  test('oz: 5 oz ≈ 141.7 g', () => {
+    assert.equal(toGrams(5, 'oz'), round1(5 * 28.3495));
+  });
+
+  test('lbs: 1 lb ≈ 453.6 g', () => {
+    assert.equal(toGrams(1, 'lbs'), round1(453.592));
+  });
+
+  test('lbs: 0.5 lbs ≈ 226.8 g', () => {
+    assert.equal(toGrams(0.5, 'lbs'), round1(0.5 * 453.592));
+  });
+
+  test('nutrition is correct when weight entered in kg', () => {
+    const grams = toGrams(0.2, 'kg'); // 0.2 kg = 200 g
+    const result = computeItem({ name: 'chicken breast', grams });
+    assert.equal(result.cal, 330);
+    assert.equal(result.protein, 62);
+  });
+
+  test('nutrition is correct when weight entered in lbs', () => {
+    const grams = toGrams(1, 'lbs'); // 1 lb ≈ 453.6 g
+    const result = computeItem({ name: 'chicken breast', grams });
+    assert.ok(result.cal > 700 && result.cal < 780, `Expected ~748 kcal, got ${result.cal}`);
+  });
+});
+
 describe('saved meal data shape validation', () => {
   test('a saved meal entry has all required fields', () => {
     const meal = {

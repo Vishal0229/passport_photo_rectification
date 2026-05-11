@@ -412,7 +412,7 @@
       padding: 8px 20px;
     }
 
-    /* ── Unit Toggle (grams / pieces) ── */
+    /* ── Unit Toggle (g / kg / oz / lbs) ── */
     .qty-row {
       display: flex;
       gap: 10px;
@@ -429,11 +429,11 @@
       align-self: flex-end;
     }
     .unit-btn {
-      padding: 0 14px;
+      padding: 0 11px;
       border: none;
       background: #f7faf7;
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s;
@@ -446,22 +446,17 @@
     }
     .unit-btn:not(.active):hover { background: #edf7f0; color: var(--green-dk); }
 
-    .piece-hint {
+    .convert-hint {
       margin-top: 6px;
       padding: 7px 12px;
       background: #f0faf5;
       border: 1px solid #b2dfcc;
       border-radius: var(--radius-sm);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--green-dk);
       display: flex;
       align-items: center;
       gap: 6px;
-    }
-    .piece-hint.warn {
-      background: #fff8e1;
-      border-color: var(--warning);
-      color: #7d5b00;
     }
 
     /* ── Responsive ── */
@@ -514,11 +509,13 @@
           <input type="number" id="gram-input" min="0.1" step="0.1" placeholder="e.g. 150">
         </div>
         <div class="unit-toggle">
-          <button class="unit-btn active" id="unit-grams">g</button>
-          <button class="unit-btn" id="unit-pieces">pcs</button>
+          <button class="unit-btn active" id="unit-g">g</button>
+          <button class="unit-btn" id="unit-kg">kg</button>
+          <button class="unit-btn" id="unit-oz">oz</button>
+          <button class="unit-btn" id="unit-lbs">lbs</button>
         </div>
       </div>
-      <div id="piece-hint" class="piece-hint hidden"></div>
+      <div id="convert-hint" class="convert-hint hidden"></div>
       <div id="gram-error" class="error-msg"></div>
       <button id="add-btn" class="btn btn-primary" style="margin-top:10px">+ Add to Meal</button>
     </section>
@@ -784,7 +781,7 @@ const state = {
   loadedMealId: null,   // UUID of meal loaded from history
   acHighlight: -1,      // index in autocomplete list
   storageOk: true,
-  unitMode: 'grams',    // 'grams' | 'pieces'
+  unitMode: 'g',        // 'g' | 'kg' | 'oz' | 'lbs'
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -796,7 +793,7 @@ let foodInput, gramInput, acList, foodError, gramError,
     addBtn, calculateBtn, saveBtn, newBtn,
     resultsPanel, macrCards, resultsTbody,
     historyList, toast, storageBanner,
-    unitGramsBtn, unitPiecesBtn, pieceHint, gramLabel;
+    unitGBtn, unitKgBtn, unitOzBtn, unitLbsBtn, convertHint, gramLabel;
 
 /* ═══════════════════════════════════════════════════════════════
    UTILITIES
@@ -907,7 +904,6 @@ function selectFood(name) {
   foodInput.value = name;
   closeAutocomplete();
   clearError(foodError, foodInput);
-  updatePieceHint();
   gramInput.focus();
 }
 
@@ -928,30 +924,30 @@ function navigateAc(dir) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   UNIT MODE (grams / pieces)
+   UNIT MODE (g / kg / oz / lbs)
 ═══════════════════════════════════════════════════════════════ */
+const UNIT_TO_GRAMS = { g: 1, kg: 1000, oz: 28.3495, lbs: 453.592 };
+
 function setUnitMode(mode) {
   state.unitMode = mode;
-  unitGramsBtn.classList.toggle('active', mode === 'grams');
-  unitPiecesBtn.classList.toggle('active', mode === 'pieces');
-  gramLabel.textContent = mode === 'grams' ? 'Quantity (grams)' : 'Number of pieces';
-  gramInput.placeholder = mode === 'grams' ? 'e.g. 150' : 'e.g. 15';
-  updatePieceHint();
+  const btnMap = { g: unitGBtn, kg: unitKgBtn, oz: unitOzBtn, lbs: unitLbsBtn };
+  Object.values(btnMap).forEach(b => b.classList.remove('active'));
+  btnMap[mode].classList.add('active');
+  const labels = { g: 'Quantity (grams)', kg: 'Quantity (kg)', oz: 'Quantity (oz)', lbs: 'Quantity (lbs)' };
+  const placeholders = { g: 'e.g. 150', kg: 'e.g. 0.15', oz: 'e.g. 5.3', lbs: 'e.g. 0.33' };
+  gramLabel.textContent = labels[mode];
+  gramInput.placeholder = placeholders[mode];
+  gramInput.value = '';
+  updateConvertHint();
 }
 
-function updatePieceHint() {
-  if (state.unitMode !== 'pieces') { pieceHint.classList.add('hidden'); return; }
-  const name = foodInput.value.trim().toLowerCase();
-  if (!name || !FOOD_DB[name]) { pieceHint.classList.add('hidden'); return; }
-  const db = FOOD_DB[name];
-  if (db.perItem) {
-    pieceHint.className = 'piece-hint';
-    pieceHint.innerHTML = `&#x2139;&#xFE0F; 1 ${db.itemLabel || 'piece'} ≈ <strong>${db.perItem}g</strong>`;
-  } else {
-    pieceHint.className = 'piece-hint warn';
-    pieceHint.innerHTML = `&#x26A0;&#xFE0F; Per-piece weight unavailable for <strong>${name}</strong> — please use grams mode.`;
-  }
-  pieceHint.classList.remove('hidden');
+function updateConvertHint() {
+  if (state.unitMode === 'g') { convertHint.classList.add('hidden'); return; }
+  const val = parseFloat(gramInput.value);
+  if (!val || val <= 0) { convertHint.classList.add('hidden'); return; }
+  const grams = round1(val * UNIT_TO_GRAMS[state.unitMode]);
+  convertHint.className = 'convert-hint';
+  convertHint.innerHTML = `&#x2139;&#xFE0F; ${val} ${state.unitMode} = <strong>${grams} g</strong>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -971,7 +967,7 @@ function addItem() {
     ok = false;
   }
   if (isNaN(qty) || gramInput.value === '') {
-    setError(gramError, gramInput, state.unitMode === 'pieces' ? 'Please enter the number of pieces.' : 'Please enter a quantity in grams.');
+    setError(gramError, gramInput, state.unitMode === 'g' ? 'Please enter a quantity in grams.' : `Please enter a quantity in ${state.unitMode}.`);
     ok = false;
   } else if (qty <= 0) {
     setError(gramError, gramInput, 'Quantity must be greater than 0.');
@@ -979,16 +975,7 @@ function addItem() {
   }
   if (!ok) return;
 
-  // Convert pieces → grams if in pieces mode
-  let grams = qty;
-  if (state.unitMode === 'pieces') {
-    const db = FOOD_DB[name];
-    if (!db.perItem) {
-      setError(gramError, gramInput, `Per-piece weight not available for "${name}". Switch to grams mode.`);
-      return;
-    }
-    grams = Math.round(qty * db.perItem * 10) / 10;
-  }
+  const grams = round1(qty * UNIT_TO_GRAMS[state.unitMode]);
 
   state.currentMeal.push({ id: uid(), name, grams });
   state.lastResults = null;
@@ -997,7 +984,7 @@ function addItem() {
   foodInput.value = '';
   gramInput.value = '';
   closeAutocomplete();
-  pieceHint.classList.add('hidden');
+  convertHint.classList.add('hidden');
   foodInput.focus();
 }
 
@@ -1152,7 +1139,7 @@ function renderHistory() {
     const count = entry.items.length;
     return `
       <div class="history-item ${active}" data-id="${entry.id}" onclick="loadMeal(state.history.find(h=>h.id==='${entry.id}'))">
-        <div class="history-item-label">${entry.label || 'Unnamed Meal'}</div>
+        <div class="history-item-label">${esc(entry.label || 'Unnamed Meal')}</div>
         <div class="history-item-meta">${fmtDate(entry.savedAt)} &middot; ${count} item${count!==1?'s':''} &middot; ${cal} kcal</div>
         <button class="history-delete" title="Delete" onclick="event.stopPropagation();deleteSavedMeal('${entry.id}')">&#x2715;</button>
       </div>
@@ -1275,9 +1262,11 @@ document.addEventListener('DOMContentLoaded', () => {
   historyList    = $('history-list');
   toast          = $('toast');
   storageBanner  = $('storage-banner');
-  unitGramsBtn   = $('unit-grams');
-  unitPiecesBtn  = $('unit-pieces');
-  pieceHint      = $('piece-hint');
+  unitGBtn       = $('unit-g');
+  unitKgBtn      = $('unit-kg');
+  unitOzBtn      = $('unit-oz');
+  unitLbsBtn     = $('unit-lbs');
+  convertHint    = $('convert-hint');
   gramLabel      = $('gram-label');
 
   checkStorageAvailable();
@@ -1288,8 +1277,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!state.currentMeal.length) renderMealList();
 
   // — Unit toggle —
-  unitGramsBtn.addEventListener('click', () => setUnitMode('grams'));
-  unitPiecesBtn.addEventListener('click', () => setUnitMode('pieces'));
+  unitGBtn.addEventListener('click',   () => setUnitMode('g'));
+  unitKgBtn.addEventListener('click',  () => setUnitMode('kg'));
+  unitOzBtn.addEventListener('click',  () => setUnitMode('oz'));
+  unitLbsBtn.addEventListener('click', () => setUnitMode('lbs'));
 
   // — Food input: autocomplete —
   foodInput.addEventListener('input', () => {
@@ -1297,7 +1288,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (q.length >= 1) renderAutocomplete(getMatches(q));
     else closeAutocomplete();
     clearError(foodError, foodInput);
-    updatePieceHint();
   });
 
   foodInput.addEventListener('keydown', e => {
@@ -1326,7 +1316,10 @@ document.addEventListener('DOMContentLoaded', () => {
   gramInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') addItem();
   });
-  gramInput.addEventListener('input', () => clearError(gramError, gramInput));
+  gramInput.addEventListener('input', () => {
+    clearError(gramError, gramInput);
+    updateConvertHint();
+  });
 
   // — Buttons —
   addBtn.addEventListener('click', addItem);
