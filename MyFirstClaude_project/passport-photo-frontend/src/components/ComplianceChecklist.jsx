@@ -103,7 +103,7 @@ export default function ComplianceChecklist({ analysis }) {
 }
 
 const officialLinks = {
-  US:        'https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/photos.html',
+  US:        'https://travel.state.gov/content/travel/en/passports/requirements/photos.html',
   UK:        'https://www.gov.uk/photos-for-passports',
   India:     'https://www.passportindia.gov.in/',
   Canada:    'https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html',
