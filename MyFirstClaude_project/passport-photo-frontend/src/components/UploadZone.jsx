@@ -1,14 +1,25 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { countFaces } from '../services/faceDetection'
 
 export default function UploadZone({ onPhotoSelect, photoUrl }) {
   const [dragOver, setDragOver] = useState(false)
   const [checking, setChecking] = useState(false)
   const [faceError, setFaceError] = useState(null)
+  const [localPreviewUrl, setLocalPreviewUrl] = useState(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl)
+    }
+  }, [localPreviewUrl])
 
   const handleFile = async (file) => {
     if (!file || !file.type.startsWith('image/')) return
+
+    // Show preview immediately for every file, accepted or rejected
+    if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl)
+    setLocalPreviewUrl(URL.createObjectURL(file))
 
     setChecking(true)
     setFaceError(null)
@@ -20,7 +31,6 @@ export default function UploadZone({ onPhotoSelect, photoUrl }) {
         setFaceError(
           'The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.'
         )
-        // Reset the file input so the same file can be re-selected after choosing another
         if (inputRef.current) inputRef.current.value = ''
         return
       }
@@ -77,17 +87,31 @@ export default function UploadZone({ onPhotoSelect, photoUrl }) {
         />
 
         {checking ? (
-          <div className="py-6 space-y-3">
-            <div className="flex justify-center">
-              <span className="inline-block w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
-            </div>
+          <div className="space-y-3">
+            {localPreviewUrl && (
+              <div className="relative inline-block">
+                <img
+                  src={localPreviewUrl}
+                  alt="Checking photo"
+                  className="mx-auto max-h-56 rounded-lg object-contain shadow-sm opacity-60"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="inline-block w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              </div>
+            )}
+            {!localPreviewUrl && (
+              <div className="flex justify-center py-4">
+                <span className="inline-block w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <p className="text-blue-600 font-medium text-sm">Checking for a face…</p>
             <p className="text-blue-400 text-xs">This takes a moment on the first photo</p>
           </div>
-        ) : photoUrl ? (
+        ) : (localPreviewUrl || photoUrl) ? (
           <div className="space-y-3">
             <img
-              src={photoUrl}
+              src={localPreviewUrl || photoUrl}
               alt="Uploaded photo"
               className="mx-auto max-h-72 rounded-lg object-contain shadow-sm"
             />
