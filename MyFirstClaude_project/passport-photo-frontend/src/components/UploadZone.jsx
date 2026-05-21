@@ -38,6 +38,14 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
         return
       }
 
+      if (faces > 1) {
+        setFaceError(
+          `${faces} people detected. Passport photos must show exactly one person — please upload a solo photo.`
+        )
+        if (inputRef.current) inputRef.current.value = ''
+        return
+      }
+
       onPhotoSelect(file)
     } catch (err) {
       // Model load failure or decode error — block the photo and tell the user
@@ -131,12 +139,14 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
         )}
       </div>
 
-      {/* Face-not-found error */}
+      {/* Upload error */}
       {faceError && (
         <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
-          <span className="text-xl shrink-0 mt-0.5">🚫</span>
+          <span className="text-xl shrink-0 mt-0.5">{faceError.includes('people') ? '👥' : '🚫'}</span>
           <div className="flex-1">
-            <p className="text-red-700 text-sm font-semibold">Photo is not of a person</p>
+            <p className="text-red-700 text-sm font-semibold">
+              {faceError.includes('people') ? 'Multiple people detected' : 'Photo is not of a person'}
+            </p>
             <p className="text-red-600 text-xs mt-0.5 leading-relaxed">{faceError}</p>
             <button
               onClick={(e) => { e.stopPropagation(); setFaceError(null); open() }}

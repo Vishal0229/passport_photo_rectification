@@ -43,6 +43,12 @@ public class PhotoController {
                     "errorType", "NO_FACE"
                 ));
             }
+            if (faces > 1) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", faces + " people detected. Passport photos must show exactly one person — please upload a solo photo.",
+                    "errorType", "MULTIPLE_FACES"
+                ));
+            }
 
             AnalysisResult result = analysisService.analyzePhoto(photo, country);
             return ResponseEntity.ok(result);
@@ -67,6 +73,12 @@ public class PhotoController {
                 return ResponseEntity.badRequest().body(Map.of(
                     "message", "The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.",
                     "errorType", "NO_FACE"
+                ));
+            }
+            if (faces > 1) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", faces + " people detected. Passport photos must show exactly one person — please upload a solo photo.",
+                    "errorType", "MULTIPLE_FACES"
                 ));
             }
 
