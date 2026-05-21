@@ -79,6 +79,35 @@ export default function ComplianceChecklist({ analysis }) {
           </div>
         </div>
       )}
+
+      {/* Disclaimer */}
+      <div className="mt-4 flex items-start gap-2 text-xs text-gray-400 border-t border-gray-100 pt-4">
+        <span className="shrink-0 mt-0.5">ℹ️</span>
+        <p className="leading-relaxed">
+          Specifications are based on official government guidelines but may change.
+          Always verify your final photo against your country's passport authority before submitting.{' '}
+          {officialLinks[country] && (
+            <a
+              href={officialLinks[country]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-gray-600 transition-colors"
+            >
+              Check official requirements →
+            </a>
+          )}
+        </p>
+      </div>
     </div>
   )
+}
+
+const officialLinks = {
+  US:        'https://travel.state.gov/content/travel/en/passports/photos.html',
+  UK:        'https://www.gov.uk/photos-for-passports',
+  India:     'https://www.passportindia.gov.in/AppOnlineProject/pdf/PhotoSpec.pdf',
+  Canada:    'https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html',
+  Australia: 'https://www.passports.gov.au/getting-passport-how-it-works/passport-photo-requirements',
+  UAE:       'https://www.icp.gov.ae',
+  Schengen:  'https://www.icao.int/Security/FAL/TRIP/Documents/TR-Face-Image-Data-2021.pdf',
 }
