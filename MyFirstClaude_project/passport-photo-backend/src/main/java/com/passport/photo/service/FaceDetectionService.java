@@ -21,7 +21,6 @@ import java.nio.file.StandardCopyOption;
 import static org.bytedeco.opencv.global.opencv_core.CV_8UC1;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.IMREAD_GRAYSCALE;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.imdecode;
-import static org.bytedeco.opencv.global.opencv_imgproc.equalizeHist;
 
 @Service
 public class FaceDetectionService {
@@ -73,9 +72,6 @@ public class FaceDetectionService {
             gray.close();
             throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
         }
-
-        // Equalise histogram so detection works under varied lighting conditions
-        equalizeHist(gray, gray);
 
         RectVector faces = new RectVector();
         classifier.detectMultiScale(
