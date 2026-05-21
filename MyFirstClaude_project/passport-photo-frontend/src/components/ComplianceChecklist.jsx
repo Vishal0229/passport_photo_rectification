@@ -105,9 +105,9 @@ export default function ComplianceChecklist({ analysis }) {
 const officialLinks = {
   US:        'https://travel.state.gov/content/travel/en/passports/requirements/photos.html',
   UK:        'https://www.gov.uk/photos-for-passports',
-  India:     'https://www.mea.gov.in/passport-photo-requirements.htm',
+  India:     'https://www.mea.gov.in/images/pdf1/PassportPhotoSpecification.pdf',
   Canada:    'https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html',
-  Australia: 'https://www.passports.gov.au/getting-passport-how-it-works/passport-photo-requirements',
-  UAE:       'https://www.icp.gov.ae',
-  Schengen:  'https://home-affairs.ec.europa.eu/policies/schengen-borders-and-visa_en',
+  Australia: 'https://www.passports.gov.au/help/passport-photos',
+  UAE:       'https://www.icp.gov.ae/en/passport/pages/passportrequirements.aspx',
+  Schengen:  'https://www.schengenvisainfo.com/photo-requirements/',
 }
