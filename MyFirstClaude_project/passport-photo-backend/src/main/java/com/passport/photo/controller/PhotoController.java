@@ -1,5 +1,6 @@
 package com.passport.photo.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.passport.photo.model.AnalysisResult;
 import com.passport.photo.model.CountrySpec;
 import com.passport.photo.service.FaceDetectionService;
@@ -24,6 +25,8 @@ public class PhotoController {
     @Autowired
     private FaceDetectionService faceDetectionService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @GetMapping("/countries")
     public ResponseEntity<Map<String, CountrySpec>> getCountries() {
         return ResponseEntity.ok(analysisService.getCountrySpecs());
@@ -32,7 +35,8 @@ public class PhotoController {
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> analyzePhoto(
             @RequestParam("photo") MultipartFile photo,
-            @RequestParam("country") String country) {
+            @RequestParam("country") String country,
+            @RequestParam(value = "customSpec", required = false) String customSpecJson) {
         try {
             byte[] bytes = photo.getBytes();
 
@@ -44,7 +48,13 @@ public class PhotoController {
                 ));
             }
 
-            AnalysisResult result = analysisService.analyzePhoto(photo, country);
+            AnalysisResult result;
+            if (customSpecJson != null && !customSpecJson.isBlank()) {
+                CountrySpec spec = objectMapper.readValue(customSpecJson, CountrySpec.class);
+                result = analysisService.analyzePhoto(photo, spec);
+            } else {
+                result = analysisService.analyzePhoto(photo, country);
+            }
             return ResponseEntity.ok(result);
 
         } catch (IllegalArgumentException e) {
@@ -58,7 +68,8 @@ public class PhotoController {
     @PostMapping(value = "/correct", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> correctPhoto(
             @RequestParam("photo") MultipartFile photo,
-            @RequestParam("country") String country) {
+            @RequestParam("country") String country,
+            @RequestParam(value = "customSpec", required = false) String customSpecJson) {
         try {
             byte[] bytes = photo.getBytes();
 
@@ -70,7 +81,13 @@ public class PhotoController {
                 ));
             }
 
-            byte[] corrected = analysisService.correctPhoto(photo, country);
+            byte[] corrected;
+            if (customSpecJson != null && !customSpecJson.isBlank()) {
+                CountrySpec spec = objectMapper.readValue(customSpecJson, CountrySpec.class);
+                corrected = analysisService.correctPhoto(photo, spec);
+            } else {
+                corrected = analysisService.correctPhoto(photo, country);
+            }
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.IMAGE_JPEG);
             headers.setContentDispositionFormData("attachment", "passport_photo.jpg");

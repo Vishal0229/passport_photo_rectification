@@ -1,9 +1,24 @@
 import { useState, useEffect } from 'react'
 import UploadZone from './components/UploadZone'
 import CountrySelector from './components/CountrySelector'
+import CustomSpecForm from './components/CustomSpecForm'
 import ComplianceChecklist from './components/ComplianceChecklist'
 import PhotoComparison from './components/PhotoComparison'
 import { analyzePhoto, correctPhoto } from './services/api'
+
+const DEFAULT_CUSTOM_SPEC = {
+  name: '',
+  widthMm: 0,
+  heightMm: 0,
+  widthPx: 0,
+  heightPx: 0,
+  dpi: 300,
+  backgroundColor: 'WHITE',
+  backgroundColorHex: '#FFFFFF',
+  faceRatioMin: 0.50,
+  faceRatioMax: 0.75,
+  description: '',
+}
 
 function Spinner() {
   return (
@@ -15,6 +30,7 @@ export default function App() {
   const [photo, setPhoto] = useState(null)
   const [photoUrl, setPhotoUrl] = useState(null)
   const [country, setCountry] = useState('US')
+  const [customSpec, setCustomSpec] = useState(DEFAULT_CUSTOM_SPEC)
   const [analysis, setAnalysis] = useState(null)
   const [correctedUrl, setCorrectedUrl] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -58,7 +74,7 @@ export default function App() {
     setAnalysis(null)
     if (correctedUrl) { URL.revokeObjectURL(correctedUrl); setCorrectedUrl(null) }
     try {
-      const result = await analyzePhoto(photo, country)
+      const result = await analyzePhoto(photo, country, country === 'Custom' ? customSpec : null)
       setAnalysis(result)
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Unknown error'
@@ -77,7 +93,7 @@ export default function App() {
     setCorrecting(true)
     setError(null)
     try {
-      const blob = await correctPhoto(photo, country)
+      const blob = await correctPhoto(photo, country, country === 'Custom' ? customSpec : null)
       if (correctedUrl) URL.revokeObjectURL(correctedUrl)
       setCorrectedUrl(URL.createObjectURL(blob))
     } catch (err) {
@@ -144,9 +160,13 @@ export default function App() {
           <div className="flex flex-col gap-4">
             <CountrySelector country={country} onChange={handleCountryChange} />
 
+            {country === 'Custom' && (
+              <CustomSpecForm spec={customSpec} onChange={setCustomSpec} />
+            )}
+
             <button
               onClick={handleAnalyze}
-              disabled={!photo || loading}
+              disabled={!photo || loading || (country === 'Custom' && (!customSpec.widthMm || !customSpec.heightMm))}
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white
                          font-semibold py-3.5 rounded-xl transition-colors
                          disabled:opacity-40 disabled:cursor-not-allowed shadow-sm

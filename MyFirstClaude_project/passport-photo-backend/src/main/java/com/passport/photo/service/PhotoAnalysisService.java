@@ -37,7 +37,15 @@ public class PhotoAnalysisService {
     }
 
     public AnalysisResult analyzePhoto(MultipartFile photo, String country) throws IOException {
-        CountrySpec spec = getSpec(country);
+        return analyzePhoto(photo, getSpec(country), country);
+    }
+
+    public AnalysisResult analyzePhoto(MultipartFile photo, CountrySpec spec) throws IOException {
+        String label = (spec.getName() != null && !spec.getName().isBlank()) ? spec.getName() : "Custom";
+        return analyzePhoto(photo, spec, label);
+    }
+
+    private AnalysisResult analyzePhoto(MultipartFile photo, CountrySpec spec, String label) throws IOException {
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(photo.getBytes()));
         if (image == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
@@ -49,11 +57,14 @@ public class PhotoAnalysisService {
         checks.add(checkFacePosition(image));
 
         long passed = checks.stream().filter(ComplianceCheck::isPassed).count();
-        return new AnalysisResult(country, spec, checks, passed == checks.size(), (int) passed, checks.size());
+        return new AnalysisResult(label, spec, checks, passed == checks.size(), (int) passed, checks.size());
     }
 
     public byte[] correctPhoto(MultipartFile photo, String country) throws IOException {
-        CountrySpec spec = getSpec(country);
+        return correctPhoto(photo, getSpec(country));
+    }
+
+    public byte[] correctPhoto(MultipartFile photo, CountrySpec spec) throws IOException {
         BufferedImage original = ImageIO.read(new ByteArrayInputStream(photo.getBytes()));
         if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 

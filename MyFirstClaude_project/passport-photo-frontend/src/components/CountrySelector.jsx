@@ -6,6 +6,7 @@ const COUNTRIES = [
   { code: 'Australia',name: 'Australia',             flag: '🇦🇺', spec: '35×45 mm · white bg' },
   { code: 'UAE',      name: 'United Arab Emirates',  flag: '🇦🇪', spec: '40×60 mm · white bg' },
   { code: 'Schengen', name: 'Schengen (EU)',          flag: '🇪🇺', spec: '35×45 mm · light grey bg' },
+  { code: 'Custom',   name: 'Custom / Other',         flag: '🌍', spec: 'Enter your own specifications' },
 ]
 
 export default function CountrySelector({ country, onChange }) {
