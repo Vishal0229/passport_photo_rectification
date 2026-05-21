@@ -21,6 +21,9 @@ import java.nio.file.StandardCopyOption;
 import static org.bytedeco.opencv.global.opencv_core.CV_8UC1;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.IMREAD_GRAYSCALE;
 import static org.bytedeco.opencv.global.opencv_imgcodecs.imdecode;
+import static org.bytedeco.opencv.global.opencv_imgproc.equalizeHist;
+import static org.bytedeco.opencv.global.opencv_imgproc.resize;
+import static org.bytedeco.opencv.global.opencv_imgproc.INTER_LINEAR;
 
 @Service
 public class FaceDetectionService {
@@ -28,33 +31,30 @@ public class FaceDetectionService {
     private static final Logger log = LoggerFactory.getLogger(FaceDetectionService.class);
 
     private CascadeClassifier classifier;
+    private CascadeClassifier classifierAlt2;
 
     @PostConstruct
     public void init() throws IOException {
-        // Load native OpenCV libraries for the current platform
         Loader.load(CascadeClassifier.class);
+        classifier    = loadCascade("haarcascade_frontalface_default.xml");
+        classifierAlt2 = loadCascade("haarcascade_frontalface_alt2.xml");
+        log.info("Haar Cascade face detectors ready (default + alt2).");
+    }
 
-        ClassPathResource cascadeResource = new ClassPathResource("haarcascade_frontalface_default.xml");
-        if (!cascadeResource.exists()) {
-            throw new IllegalStateException(
-                "Haar cascade XML not found. Run: mvn generate-resources spring-boot:run\n" +
-                "Maven downloads it automatically on the first build."
-            );
+    private CascadeClassifier loadCascade(String resourceName) throws IOException {
+        ClassPathResource res = new ClassPathResource(resourceName);
+        if (!res.exists()) {
+            throw new IllegalStateException(resourceName + " not found on classpath. " +
+                "Run: mvn generate-resources spring-boot:run");
         }
-
-        // CascadeClassifier requires a real filesystem path, not an InputStream
-        File tempCascade = File.createTempFile("haarcascade_frontalface", ".xml");
-        tempCascade.deleteOnExit();
-        try (InputStream is = cascadeResource.getInputStream()) {
-            Files.copy(is, tempCascade.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        File tmp = File.createTempFile("cascade_", ".xml");
+        tmp.deleteOnExit();
+        try (InputStream is = res.getInputStream()) {
+            Files.copy(is, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
-
-        classifier = new CascadeClassifier(tempCascade.getAbsolutePath());
-        if (classifier.empty()) {
-            throw new IllegalStateException("CascadeClassifier loaded but is empty — XML may be corrupt.");
-        }
-
-        log.info("Haar Cascade face detector ready.");
+        CascadeClassifier cc = new CascadeClassifier(tmp.getAbsolutePath());
+        if (cc.empty()) throw new IllegalStateException(resourceName + " loaded but is empty.");
+        return cc;
     }
 
     /**
@@ -73,20 +73,27 @@ public class FaceDetectionService {
             throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
         }
 
+        // First pass: strict (minNeighbors=4) — low false-positive risk
         RectVector faces = new RectVector();
-        classifier.detectMultiScale(
-            gray,
-            faces,
-            1.1,              // scale factor per pyramid step
-            3,                // min neighbours — 3 balances sensitivity vs false positives
-            0,                // flags (unused in modern OpenCV)
-            new Size(30, 30), // minimum face size — small so distant/small faces still pass
-            new Size()        // maximum face size — no limit
-        );
-
+        classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(30, 30), new Size());
         int count = (int) faces.size();
-        gray.close();
         faces.close();
+
+        if (count == 0) {
+            // Second pass: alt2 cascade (more pose-tolerant) + upscale 2× + equalise.
+            // Catches faces that are small, angled, or in scanned prints.
+            // Safe because the controller blocks count > 1.
+            Mat up = new Mat();
+            resize(gray, up, new Size(gray.cols() * 2, gray.rows() * 2), 0, 0, INTER_LINEAR);
+            equalizeHist(up, up);
+            RectVector faces2 = new RectVector();
+            classifierAlt2.detectMultiScale(up, faces2, 1.05, 2, 0, new Size(30, 30), new Size());
+            count = (int) faces2.size();
+            faces2.close();
+            up.close();
+        }
+
+        gray.close();
         return count;
     }
 }

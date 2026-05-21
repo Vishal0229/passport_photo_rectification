@@ -37,12 +37,6 @@ public class PhotoController {
             byte[] bytes = photo.getBytes();
 
             int faces = faceDetectionService.countFaces(bytes);
-            if (faces == 0) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "message", "The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.",
-                    "errorType", "NO_FACE"
-                ));
-            }
             if (faces > 1) {
                 return ResponseEntity.badRequest().body(Map.of(
                     "message", faces + " people detected. Passport photos must show exactly one person — please upload a solo photo.",
@@ -69,12 +63,6 @@ public class PhotoController {
             byte[] bytes = photo.getBytes();
 
             int faces = faceDetectionService.countFaces(bytes);
-            if (faces == 0) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "message", "The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.",
-                    "errorType", "NO_FACE"
-                ));
-            }
             if (faces > 1) {
                 return ResponseEntity.badRequest().body(Map.of(
                     "message", faces + " people detected. Passport photos must show exactly one person — please upload a solo photo.",
