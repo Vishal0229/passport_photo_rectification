@@ -1,0 +1,93 @@
+{
+  "US": {
+    "name": "United States",
+    "widthMm": 51,
+    "heightMm": 51,
+    "widthPx": 600,
+    "heightPx": 600,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.50,
+    "faceRatioMax": 0.69,
+    "description": "2×2 inch (51×51 mm) square photo with white or off-white background"
+  },
+  "UK": {
+    "name": "United Kingdom",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "LIGHT_GREY",
+    "backgroundColorHex": "#F0F0F0",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with light grey or cream plain background"
+  },
+  "India": {
+    "name": "India",
+    "widthMm": 51,
+    "heightMm": 51,
+    "widthPx": 600,
+    "heightPx": 600,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.70,
+    "faceRatioMax": 0.80,
+    "description": "51×51 mm (2×2 inch) square photo with plain white background"
+  },
+  "Canada": {
+    "name": "Canada",
+    "widthMm": 50,
+    "heightMm": 70,
+    "widthPx": 591,
+    "heightPx": 827,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.44,
+    "faceRatioMax": 0.51,
+    "description": "50×70 mm photo with plain white background"
+  },
+  "Australia": {
+    "name": "Australia",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.71,
+    "faceRatioMax": 0.80,
+    "description": "35×45 mm photo with plain white or off-white background"
+  },
+  "UAE": {
+    "name": "United Arab Emirates",
+    "widthMm": 40,
+    "heightMm": 60,
+    "widthPx": 472,
+    "heightPx": 709,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.70,
+    "faceRatioMax": 0.80,
+    "description": "40×60 mm photo with plain white background"
+  },
+  "Schengen": {
+    "name": "Schengen (EU)",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "LIGHT_GREY",
+    "backgroundColorHex": "#E8E8E8",
+    "faceRatioMin": 0.71,
+    "faceRatioMax": 0.80,
+    "description": "35×45 mm photo with plain light grey background (ICAO standard)"
+  }
+}
