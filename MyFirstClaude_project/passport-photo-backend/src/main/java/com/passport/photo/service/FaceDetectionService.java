@@ -82,9 +82,9 @@ public class FaceDetectionService {
             gray,
             faces,
             1.1,              // scale factor per pyramid step
-            4,                // min neighbours — higher = fewer false positives
+            3,                // min neighbours — 3 balances sensitivity vs false positives
             0,                // flags (unused in modern OpenCV)
-            new Size(60, 60), // minimum face size in pixels
+            new Size(30, 30), // minimum face size — small so distant/small faces still pass
             new Size()        // maximum face size — no limit
         );
 

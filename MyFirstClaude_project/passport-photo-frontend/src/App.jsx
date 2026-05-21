@@ -29,14 +29,19 @@ export default function App() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
-  const handlePhotoSelect = (file) => {
+  const handleNewFileSelected = () => {
     if (photoUrl) URL.revokeObjectURL(photoUrl)
     if (correctedUrl) URL.revokeObjectURL(correctedUrl)
-    setPhoto(file)
-    setPhotoUrl(URL.createObjectURL(file))
+    setPhoto(null)
+    setPhotoUrl(null)
     setAnalysis(null)
     setCorrectedUrl(null)
     setError(null)
+  }
+
+  const handlePhotoSelect = (file) => {
+    setPhoto(file)
+    setPhotoUrl(URL.createObjectURL(file))
   }
 
   const handleCountryChange = (c) => {
@@ -134,7 +139,7 @@ export default function App() {
 
         {/* Upload + Country row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <UploadZone key={uploadKey} onPhotoSelect={handlePhotoSelect} photoUrl={photoUrl} />
+          <UploadZone key={uploadKey} onPhotoSelect={handlePhotoSelect} onNewFileSelected={handleNewFileSelected} photoUrl={photoUrl} />
 
           <div className="flex flex-col gap-4">
             <CountrySelector country={country} onChange={handleCountryChange} />

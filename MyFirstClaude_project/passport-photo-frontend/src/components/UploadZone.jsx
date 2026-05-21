@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { countFaces } from '../services/faceDetection'
 
-export default function UploadZone({ onPhotoSelect, photoUrl }) {
+export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl }) {
   const [dragOver, setDragOver] = useState(false)
   const [checking, setChecking] = useState(false)
   const [faceError, setFaceError] = useState(null)
@@ -16,6 +16,9 @@ export default function UploadZone({ onPhotoSelect, photoUrl }) {
 
   const handleFile = async (file) => {
     if (!file || !file.type.startsWith('image/')) return
+
+    // Immediately clear parent state so Analyze/Correct can't fire on the old photo
+    onNewFileSelected?.()
 
     // Show preview immediately for every file, accepted or rejected
     if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl)
