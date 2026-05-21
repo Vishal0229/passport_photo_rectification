@@ -34,7 +34,7 @@ export async function countFaces(imageFile) {
       try {
         const detections = await faceapi.detectAllFaces(
           img,
-          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3, inputSize: 416 }),
+          new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4, inputSize: 416 }),
         )
         resolve(detections.length)
       } catch (err) {
