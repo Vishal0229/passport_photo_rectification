@@ -39,7 +39,7 @@ public class PhotoController {
             int faces = faceDetectionService.countFaces(bytes);
             if (faces == 0) {
                 return ResponseEntity.badRequest().body(Map.of(
-                    "message", "No face detected. Please upload a clear photo of a person facing the camera.",
+                    "message", "The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.",
                     "errorType", "NO_FACE"
                 ));
             }
@@ -65,7 +65,7 @@ public class PhotoController {
             int faces = faceDetectionService.countFaces(bytes);
             if (faces == 0) {
                 return ResponseEntity.badRequest().body(Map.of(
-                    "message", "No face detected. Please upload a clear photo of a person facing the camera.",
+                    "message", "The photo you uploaded is not of a person. Please upload a passport-style photo of yourself facing the camera.",
                     "errorType", "NO_FACE"
                 ));
             }
