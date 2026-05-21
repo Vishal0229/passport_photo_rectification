@@ -103,11 +103,11 @@ export default function ComplianceChecklist({ analysis }) {
 }
 
 const officialLinks = {
-  US:        'https://travel.state.gov/content/travel/en/passports/photos.html',
+  US:        'https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/photos.html',
   UK:        'https://www.gov.uk/photos-for-passports',
-  India:     'https://www.passportindia.gov.in/AppOnlineProject/pdf/PhotoSpec.pdf',
+  India:     'https://www.passportindia.gov.in/',
   Canada:    'https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html',
   Australia: 'https://www.passports.gov.au/getting-passport-how-it-works/passport-photo-requirements',
   UAE:       'https://www.icp.gov.ae',
-  Schengen:  'https://www.icao.int/Security/FAL/TRIP/Documents/TR-Face-Image-Data-2021.pdf',
+  Schengen:  'https://home-affairs.ec.europa.eu/policies/schengen-borders-and-visa_en',
 }
