@@ -1,11 +1,28 @@
+/**
+ * Browser-side face detection service using @vladmandic/face-api TinyFaceDetector.
+ *
+ * Model weights are served from `/public/models/` on the same host — no CDN
+ * dependency. The model is loaded lazily on the first call to {@link countFaces}
+ * and cached for the lifetime of the page. Subsequent calls reuse the loaded model.
+ *
+ * Detection settings: scoreThreshold=0.4, inputSize=416.
+ */
 import * as faceapi from '@vladmandic/face-api'
 
-// Model weights are served from our own host (public/models/) — no CDN dependency.
+/** Path to the TinyFaceDetector model weights (relative to the public root). */
 const MODEL_URL = '/models'
 
 let ready = false
 let loadPromise = null
 
+/**
+ * Ensures the TinyFaceDetector model is loaded before detection runs.
+ *
+ * Uses a shared promise so multiple concurrent callers wait for the same load
+ * rather than triggering multiple network requests.
+ *
+ * @returns {Promise<void>}
+ */
 async function ensureLoaded() {
   if (ready) return
   if (!loadPromise) {

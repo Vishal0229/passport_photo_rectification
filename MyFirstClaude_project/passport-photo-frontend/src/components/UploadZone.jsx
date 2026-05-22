@@ -1,6 +1,25 @@
 import { useState, useRef, useEffect } from 'react'
 import { countFaces } from '../services/faceDetection'
 
+/**
+ * Drag-and-drop photo upload zone with inline browser-side face detection.
+ *
+ * Accepts JPEG, PNG, and WEBP files up to 15 MB. For each file the user selects:
+ * 1. Immediately shows a preview with a loading spinner.
+ * 2. Runs {@link countFaces} (TinyFaceDetector neural network) in the browser.
+ * 3. Rejects the file with an error message if more than one face is detected.
+ * 4. Calls `onPhotoSelect` only when the file passes the face check.
+ *
+ * Calls `onNewFileSelected` before every face-detection attempt so the parent
+ * component can clear stale analysis and correction state immediately, preventing
+ * the Analyze/Correct buttons from firing on the previous photo while detection runs.
+ *
+ * @param {Object}   props
+ * @param {Function} props.onPhotoSelect     - Called with the `File` object after it passes face detection.
+ * @param {Function} props.onNewFileSelected - Called immediately when any new file is selected, before detection completes.
+ * @param {string|null} props.photoUrl       - Object URL of the currently accepted photo, used to keep the preview visible.
+ * @returns {JSX.Element} The upload card with drop zone, preview, and error messaging.
+ */
 export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl }) {
   const [dragOver, setDragOver] = useState(false)
   const [checking, setChecking] = useState(false)
@@ -14,8 +33,16 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
     }
   }, [localPreviewUrl])
 
+  const MAX_SIZE_BYTES = 15 * 1024 * 1024
+
   const handleFile = async (file) => {
     if (!file || !file.type.startsWith('image/')) return
+
+    if (file.size > MAX_SIZE_BYTES) {
+      setFaceError('File is too large. Please upload an image smaller than 15 MB.')
+      if (inputRef.current) inputRef.current.value = ''
+      return
+    }
 
     // Immediately clear parent state so Analyze/Correct can't fire on the old photo
     onNewFileSelected?.()

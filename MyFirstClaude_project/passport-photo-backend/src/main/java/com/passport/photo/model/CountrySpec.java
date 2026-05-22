@@ -1,16 +1,36 @@
 package com.passport.photo.model;
 
+/**
+ * Specification for a country's official passport photo requirements.
+ *
+ * <p>Instances are loaded at startup from {@code country-specs.json} on the
+ * classpath, or constructed at runtime from a JSON string supplied by the
+ * frontend when the user selects the Custom / Other option.</p>
+ *
+ * @version 1.0
+ */
 public class CountrySpec {
+    /** Display name of the country or region (e.g. "United States"). */
     private String name;
+    /** Required photo width in millimetres. */
     private int widthMm;
+    /** Required photo height in millimetres. */
     private int heightMm;
+    /** Required photo width in pixels at {@link #dpi} resolution. */
     private int widthPx;
+    /** Required photo height in pixels at {@link #dpi} resolution. */
     private int heightPx;
+    /** Print resolution in dots per inch (always 300 for built-in specs). */
     private int dpi;
+    /** Background colour label: {@code "WHITE"} or {@code "LIGHT_GREY"}. */
     private String backgroundColor;
+    /** Background colour as a 6-digit hex string, e.g. {@code "#FFFFFF"}. */
     private String backgroundColorHex;
+    /** Minimum fraction (0–1) of the photo height that the face should occupy. */
     private double faceRatioMin;
+    /** Maximum fraction (0–1) of the photo height that the face should occupy. */
     private double faceRatioMax;
+    /** Human-readable summary of the requirements. */
     private String description;
 
     public CountrySpec() {}

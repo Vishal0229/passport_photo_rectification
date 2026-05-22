@@ -25,6 +25,27 @@ import static org.bytedeco.opencv.global.opencv_imgproc.equalizeHist;
 import static org.bytedeco.opencv.global.opencv_imgproc.resize;
 import static org.bytedeco.opencv.global.opencv_imgproc.INTER_LINEAR;
 
+/**
+ * Detects human faces in images using OpenCV Haar Cascade classifiers.
+ *
+ * <p>Uses a two-pass strategy to balance accuracy and false-positive rate:
+ * <ol>
+ *   <li><strong>Pass 1</strong> — {@code haarcascade_frontalface_default.xml} with strict
+ *       parameters (minNeighbors=4). Low false-positive risk; may miss small or angled faces.</li>
+ *   <li><strong>Pass 2</strong> (only when pass 1 finds zero faces) —
+ *       {@code haarcascade_frontalface_alt2.xml} with the image upscaled 2× and histogram
+ *       equalisation applied. More pose-tolerant; catches faces in scanned prints and low-res
+ *       photos. Using pass 2 only when count is already 0 keeps the false-positive rate safe
+ *       because the controller blocks {@code count > 1}.</li>
+ * </ol>
+ * </p>
+ *
+ * <p>The cascade XML files are loaded from the classpath at startup. The default cascade is
+ * downloaded at Maven build time via {@code download-maven-plugin}; the alt2 cascade is
+ * bundled directly in {@code src/main/resources/}.</p>
+ *
+ * @version 1.0
+ */
 @Service
 public class FaceDetectionService {
 
@@ -33,6 +54,13 @@ public class FaceDetectionService {
     private CascadeClassifier classifier;
     private CascadeClassifier classifierAlt2;
 
+    /**
+     * Loads both Haar Cascade classifiers from the classpath into temporary files.
+     * Called automatically by Spring after bean construction.
+     *
+     * @throws IOException           if the cascade XML resource cannot be copied to a temp file
+     * @throws IllegalStateException if a cascade file is missing from the classpath or is empty
+     */
     @PostConstruct
     public void init() throws IOException {
         Loader.load(CascadeClassifier.class);
@@ -41,6 +69,17 @@ public class FaceDetectionService {
         log.info("Haar Cascade face detectors ready (default + alt2).");
     }
 
+    /**
+     * Copies a classpath cascade XML resource to a temporary file and loads it.
+     *
+     * <p>OpenCV requires a filesystem path — it cannot read directly from a JAR stream.
+     * The temporary file is marked for deletion on JVM exit.</p>
+     *
+     * @param resourceName classpath resource name (e.g. {@code "haarcascade_frontalface_default.xml"})
+     * @return a loaded, non-empty {@link CascadeClassifier}
+     * @throws IOException           if the temp file cannot be created or written
+     * @throws IllegalStateException if the resource is not found or the classifier is empty after loading
+     */
     private CascadeClassifier loadCascade(String resourceName) throws IOException {
         ClassPathResource res = new ClassPathResource(resourceName);
         if (!res.exists()) {

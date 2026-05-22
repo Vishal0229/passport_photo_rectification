@@ -20,12 +20,34 @@ const DEFAULT_CUSTOM_SPEC = {
   description: '',
 }
 
+/**
+ * Inline animated spinner used inside loading buttons.
+ *
+ * @returns {JSX.Element} A small circular CSS animation element.
+ */
 function Spinner() {
   return (
     <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
   )
 }
 
+/**
+ * Root application component for the Passport Photo Corrector.
+ *
+ * Orchestrates the full analysis and correction flow:
+ * 1. User uploads a photo via {@link UploadZone} (frontend face detection runs here).
+ * 2. User selects a country via {@link CountrySelector}, or fills in a custom spec
+ *    via {@link CustomSpecForm} when "Custom / Other" is chosen.
+ * 3. Clicking "Analyze Photo" calls `POST /api/analyze` and displays results in
+ *    {@link ComplianceChecklist}.
+ * 4. Clicking "Correct Photo" calls `POST /api/correct` and displays before/after
+ *    images in {@link PhotoComparison}.
+ *
+ * Also listens for the browser's `beforeinstallprompt` event and shows an
+ * "Add to Home Screen" banner when the PWA install criteria are met.
+ *
+ * @returns {JSX.Element} The full single-page application layout.
+ */
 export default function App() {
   const [photo, setPhoto] = useState(null)
   const [photoUrl, setPhotoUrl] = useState(null)

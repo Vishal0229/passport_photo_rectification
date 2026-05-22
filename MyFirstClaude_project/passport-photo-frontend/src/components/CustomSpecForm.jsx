@@ -5,6 +5,31 @@ const BACKGROUNDS = [
 
 const mm2px = (mm) => Math.round(mm * 300 / 25.4)
 
+/**
+ * Form for entering a custom passport photo specification.
+ *
+ * Shown when the user selects "Custom / Other" in {@link CountrySelector}.
+ * Accepts width and height in millimetres and automatically converts them to
+ * pixels at 300 DPI using the formula `round(mm * 300 / 25.4)`. Background
+ * colour selection also auto-populates the corresponding hex value.
+ *
+ * A read-only pixel-dimension preview is displayed once both width and height
+ * are non-zero.
+ *
+ * @param {Object}   props
+ * @param {Object}   props.spec     - The current spec state object (matches the `CountrySpec` shape).
+ * @param {string}   props.spec.name - Country/region label.
+ * @param {number}   props.spec.widthMm - Photo width in mm.
+ * @param {number}   props.spec.heightMm - Photo height in mm.
+ * @param {number}   props.spec.widthPx - Derived photo width in px (auto-calculated).
+ * @param {number}   props.spec.heightPx - Derived photo height in px (auto-calculated).
+ * @param {string}   props.spec.backgroundColor - `"WHITE"` or `"LIGHT_GREY"`.
+ * @param {string}   props.spec.backgroundColorHex - Hex colour string (auto-populated from `backgroundColor`).
+ * @param {number}   props.spec.faceRatioMin - Minimum face height ratio (0–1).
+ * @param {number}   props.spec.faceRatioMax - Maximum face height ratio (0–1).
+ * @param {Function} props.onChange - Called with the updated spec object on any field change.
+ * @returns {JSX.Element} The custom spec input form card.
+ */
 export default function CustomSpecForm({ spec, onChange }) {
   const set = (field, raw) => {
     const next = { ...spec }

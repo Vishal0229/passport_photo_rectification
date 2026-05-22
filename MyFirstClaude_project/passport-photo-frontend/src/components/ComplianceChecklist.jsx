@@ -1,3 +1,26 @@
+/**
+ * Displays the full compliance analysis result for an uploaded passport photo.
+ *
+ * Shows:
+ * - A pass/fail badge and overall status banner.
+ * - An individual card for each compliance check with rule name, message,
+ *   and expected vs. actual values.
+ * - A spec summary box (dimensions, DPI, background, face ratio range).
+ * - A disclaimer with a link to the country's official photo requirements page.
+ *
+ * Official links are defined in the `officialLinks` map at the bottom of this file.
+ * Countries without a link simply omit the "Check official requirements →" link.
+ *
+ * @param {Object}           props
+ * @param {Object}           props.analysis             - The analysis result from `POST /api/analyze`.
+ * @param {string}           props.analysis.country     - Country display name.
+ * @param {Object}           props.analysis.spec        - The `CountrySpec` used for analysis.
+ * @param {Array<Object>}    props.analysis.checks      - Array of compliance check results.
+ * @param {boolean}          props.analysis.allPassed   - True when all checks passed.
+ * @param {number}           props.analysis.passedCount - Number of checks that passed.
+ * @param {number}           props.analysis.totalCount  - Total number of checks.
+ * @returns {JSX.Element} The compliance results card.
+ */
 export default function ComplianceChecklist({ analysis }) {
   const { checks, passedCount, totalCount, allPassed, spec, country } = analysis
 

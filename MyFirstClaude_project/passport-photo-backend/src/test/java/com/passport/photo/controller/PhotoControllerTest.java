@@ -83,6 +83,18 @@ class PhotoControllerTest {
     // ─── POST /api/analyze ───────────────────────────────────────────────────────
 
     @Test
+    void analyzePhoto_unsupportedContentType_returns400() throws Exception {
+        MockMultipartFile pdf = new MockMultipartFile(
+            "photo", "test.pdf", "application/pdf", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(pdf)
+                .param("country", "US"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("Unsupported file type")));
+    }
+
+    @Test
     void analyzePhoto_validRequest_returns200WithAnalysis() throws Exception {
         when(faceDetectionService.countFaces(any())).thenReturn(0);
         when(analysisService.analyzePhoto(any(), eq("US"))).thenReturn(dummyResult());

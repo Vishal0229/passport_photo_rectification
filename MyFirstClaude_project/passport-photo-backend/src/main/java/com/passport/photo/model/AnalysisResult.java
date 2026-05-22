@@ -2,16 +2,42 @@ package com.passport.photo.model;
 
 import java.util.List;
 
+/**
+ * The complete result of a passport photo compliance analysis.
+ *
+ * <p>Returned as JSON by {@code POST /api/analyze}. Contains the country name,
+ * the spec that was used, the result of every individual rule check, and
+ * aggregate pass/fail counts.</p>
+ *
+ * @version 1.0
+ */
 public class AnalysisResult {
+    /** Country display name (or {@code "Custom"} for user-entered specs). */
     private String country;
+    /** The {@link CountrySpec} against which the photo was evaluated. */
     private CountrySpec spec;
+    /** Ordered list of individual rule results. Always contains exactly 5 checks. */
     private List<ComplianceCheck> checks;
+    /** {@code true} only when every check in {@link #checks} passed. */
     private boolean allPassed;
+    /** Number of checks that passed. */
     private int passedCount;
+    /** Total number of checks evaluated (always 5). */
     private int totalCount;
 
+    /** Required by Jackson for deserialisation. */
     public AnalysisResult() {}
 
+    /**
+     * Constructs a fully-populated analysis result.
+     *
+     * @param country     display name of the country or region
+     * @param spec        the spec used for evaluation
+     * @param checks      list of individual compliance check results
+     * @param allPassed   {@code true} if every check passed
+     * @param passedCount number of checks that passed
+     * @param totalCount  total number of checks evaluated
+     */
     public AnalysisResult(String country, CountrySpec spec, List<ComplianceCheck> checks,
                           boolean allPassed, int passedCount, int totalCount) {
         this.country = country;

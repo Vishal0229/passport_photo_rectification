@@ -7,7 +7,6 @@ import com.passport.photo.model.ComplianceCheck;
 import com.passport.photo.model.CountrySpec;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -20,11 +19,35 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Core service for passport photo compliance analysis and image correction.
+ *
+ * <p>On construction, loads all country specifications from
+ * {@code /country-specs.json} on the classpath. Exposes methods to run five
+ * compliance checks against an uploaded image and to produce a corrected JPEG
+ * that exactly matches the target country's pixel dimensions.</p>
+ *
+ * <h2>Compliance checks (in order)</h2>
+ * <ol>
+ *   <li>Image Dimensions — width and height meet or exceed the required pixel size</li>
+ *   <li>Aspect Ratio — within ±15% of the target ratio</li>
+ *   <li>Background Color — corner sampling: &gt;75% of sampled corner pixels are bright (R,G,B &gt; 200)</li>
+ *   <li>Resolution / Quality — total pixel area meets or exceeds the required area</li>
+ *   <li>Face Presence (estimated) — colour variance in the upper-centre region exceeds a threshold</li>
+ * </ol>
+ *
+ * @version 1.0
+ */
 @Service
 public class PhotoAnalysisService {
 
     private final Map<String, CountrySpec> countrySpecs;
 
+    /**
+     * Loads country specifications from {@code country-specs.json} on the classpath.
+     *
+     * @throws RuntimeException if the file is missing or cannot be parsed
+     */
     public PhotoAnalysisService() {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -36,17 +59,45 @@ public class PhotoAnalysisService {
         }
     }
 
-    public AnalysisResult analyzePhoto(MultipartFile photo, String country) throws IOException {
-        return analyzePhoto(photo, getSpec(country), country);
+    /**
+     * Analyzes a photo against the built-in spec for the given country code.
+     *
+     * @param imageBytes raw bytes of the uploaded image (JPEG, PNG, or WEBP)
+     * @param country    country code key (e.g. {@code "US"}, {@code "India"})
+     * @return the compliance analysis result
+     * @throws IllegalArgumentException if the country code is unknown or the image cannot be read
+     * @throws IOException              if an I/O error occurs reading the image bytes
+     */
+    public AnalysisResult analyzePhoto(byte[] imageBytes, String country) throws IOException {
+        return analyzePhoto(imageBytes, getSpec(country), country);
     }
 
-    public AnalysisResult analyzePhoto(MultipartFile photo, CountrySpec spec) throws IOException {
+    /**
+     * Analyzes a photo against an explicitly supplied spec (used for Custom country).
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param spec       the {@link CountrySpec} to evaluate against
+     * @return the compliance analysis result
+     * @throws IllegalArgumentException if the image cannot be decoded
+     * @throws IOException              if an I/O error occurs reading the image bytes
+     */
+    public AnalysisResult analyzePhoto(byte[] imageBytes, CountrySpec spec) throws IOException {
         String label = (spec.getName() != null && !spec.getName().isBlank()) ? spec.getName() : "Custom";
-        return analyzePhoto(photo, spec, label);
+        return analyzePhoto(imageBytes, spec, label);
     }
 
-    private AnalysisResult analyzePhoto(MultipartFile photo, CountrySpec spec, String label) throws IOException {
-        BufferedImage image = ImageIO.read(new ByteArrayInputStream(photo.getBytes()));
+    /**
+     * Internal analysis driver — runs all five checks and assembles the result.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param spec       the spec to evaluate against
+     * @param label      display label for the country in the result
+     * @return the compliance analysis result
+     * @throws IllegalArgumentException if the image cannot be decoded
+     * @throws IOException              if an I/O error occurs
+     */
+    private AnalysisResult analyzePhoto(byte[] imageBytes, CountrySpec spec, String label) throws IOException {
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (image == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
         List<ComplianceCheck> checks = new ArrayList<>();
@@ -60,12 +111,35 @@ public class PhotoAnalysisService {
         return new AnalysisResult(label, spec, checks, passed == checks.size(), (int) passed, checks.size());
     }
 
-    public byte[] correctPhoto(MultipartFile photo, String country) throws IOException {
-        return correctPhoto(photo, getSpec(country));
+    /**
+     * Corrects a photo to exactly match the pixel dimensions of the built-in spec
+     * for the given country code.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param country    country code key (e.g. {@code "UK"})
+     * @return JPEG bytes of the corrected image
+     * @throws IllegalArgumentException if the country code is unknown or the image cannot be read
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] correctPhoto(byte[] imageBytes, String country) throws IOException {
+        return correctPhoto(imageBytes, getSpec(country));
     }
 
-    public byte[] correctPhoto(MultipartFile photo, CountrySpec spec) throws IOException {
-        BufferedImage original = ImageIO.read(new ByteArrayInputStream(photo.getBytes()));
+    /**
+     * Corrects a photo to exactly match the pixel dimensions specified in the supplied spec.
+     *
+     * <p>Uses cover-mode scaling (both dimensions filled) followed by a centre crop with a
+     * slight top-bias vertical offset to keep the face in frame, then fills remaining canvas
+     * area with the spec's background colour.</p>
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param spec       the target {@link CountrySpec}
+     * @return JPEG bytes of the corrected image
+     * @throws IllegalArgumentException if the image cannot be decoded
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] correctPhoto(byte[] imageBytes, CountrySpec spec) throws IOException {
+        BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
         BufferedImage corrected = buildCorrectedImage(original, spec);
@@ -74,16 +148,35 @@ public class PhotoAnalysisService {
         return baos.toByteArray();
     }
 
+    /**
+     * Returns the full map of built-in country specifications keyed by country code.
+     *
+     * @return unmodifiable view of the loaded country specs
+     */
     public Map<String, CountrySpec> getCountrySpecs() {
         return countrySpecs;
     }
 
+    /**
+     * Looks up a built-in country spec by code.
+     *
+     * @param country country code key
+     * @return the matching {@link CountrySpec}
+     * @throws IllegalArgumentException if no spec exists for the given code
+     */
     private CountrySpec getSpec(String country) {
         CountrySpec spec = countrySpecs.get(country);
         if (spec == null) throw new IllegalArgumentException("Unknown country code: " + country);
         return spec;
     }
 
+    /**
+     * Checks that the image is at least as wide and tall as the spec requires.
+     *
+     * @param image the decoded source image
+     * @param spec  the country spec defining minimum dimensions
+     * @return a {@link ComplianceCheck} with {@code passed=true} if both dimensions meet the minimum
+     */
     private ComplianceCheck checkDimensions(BufferedImage image, CountrySpec spec) {
         boolean passed = image.getWidth() >= spec.getWidthPx() && image.getHeight() >= spec.getHeightPx();
         String actual   = image.getWidth() + "×" + image.getHeight() + " px";
@@ -94,6 +187,13 @@ public class PhotoAnalysisService {
                 expected, actual);
     }
 
+    /**
+     * Checks that the image aspect ratio is within ±15% of the target ratio.
+     *
+     * @param image the decoded source image
+     * @param spec  the country spec defining the target dimensions
+     * @return a {@link ComplianceCheck} indicating whether the ratio is acceptable
+     */
     private ComplianceCheck checkAspectRatio(BufferedImage image, CountrySpec spec) {
         double imgAspect  = (double) image.getWidth()  / image.getHeight();
         double specAspect = (double) spec.getWidthPx() / spec.getHeightPx();
@@ -106,6 +206,17 @@ public class PhotoAnalysisService {
                 expected, actual);
     }
 
+    /**
+     * Checks that the background appears white or light-coloured by sampling corner pixels.
+     *
+     * <p>Samples a square region of up to 30 × 30 pixels in each of the four corners and
+     * counts how many pixels have R, G, and B all above 200. Passes if more than 75% of
+     * sampled pixels meet that threshold.</p>
+     *
+     * @param image the decoded source image
+     * @param spec  the country spec (used for the expected background colour in the message)
+     * @return a {@link ComplianceCheck} indicating whether the background is sufficiently light
+     */
     private ComplianceCheck checkBackground(BufferedImage image, CountrySpec spec) {
         int radius = Math.min(30, Math.min(image.getWidth(), image.getHeight()) / 8);
         int bright = 0, total = 0;
@@ -133,6 +244,15 @@ public class PhotoAnalysisService {
                 String.format("%.0f%% light pixels sampled at corners", ratio * 100));
     }
 
+    /**
+     * Checks that the total pixel count meets or exceeds the required area.
+     *
+     * <p>Note: this compares pixel counts only — it does not read or validate EXIF DPI metadata.</p>
+     *
+     * @param image the decoded source image
+     * @param spec  the country spec defining the required pixel dimensions
+     * @return a {@link ComplianceCheck} indicating whether the resolution is sufficient
+     */
     private ComplianceCheck checkResolution(BufferedImage image, CountrySpec spec) {
         long minPx = (long) spec.getWidthPx()  * spec.getHeightPx();
         long actPx = (long) image.getWidth()   * image.getHeight();
@@ -144,6 +264,21 @@ public class PhotoAnalysisService {
                 image.getWidth() + "×" + image.getHeight() + " px");
     }
 
+    /**
+     * Estimates whether a face is present and centred by measuring pixel colour variance.
+     *
+     * <p>Samples the red channel in the upper-centre quarter of the image (x: 25–75%,
+     * y: 12.5–62.5%) and computes variance. Variance above 200 is treated as evidence
+     * of image content (i.e. a face). Near-zero variance suggests a blank or uniformly
+     * coloured region.</p>
+     *
+     * <p><strong>Limitation:</strong> this is a heuristic, not a true face detector. It can
+     * produce false negatives on very uniform photos and false positives on patterned
+     * backgrounds.</p>
+     *
+     * @param image the decoded source image
+     * @return a {@link ComplianceCheck} estimating whether a face is centred in the upper region
+     */
     private ComplianceCheck checkFacePosition(BufferedImage image) {
         // Heuristic: sample colour variance in the upper-centre region (where a face would be).
         // High variance signals image content; near-zero variance suggests a blank / uniform area.
@@ -165,6 +300,26 @@ public class PhotoAnalysisService {
                 hasContent ? "Content detected" : "Low variation detected in centre");
     }
 
+    /**
+     * Scales and crops the source image to exactly match the spec's target dimensions.
+     *
+     * <p>Algorithm:
+     * <ol>
+     *   <li>Compute a scale factor so that both target dimensions are fully covered
+     *       (cover mode — no empty borders).</li>
+     *   <li>Scale the source using Thumbnailator with bicubic interpolation.</li>
+     *   <li>Centre-crop horizontally; apply a 1/3 top-bias vertical crop so the face
+     *       stays in frame rather than being centred on empty lower area.</li>
+     *   <li>Fill the canvas with the spec's background colour before drawing the image
+     *       so any residual border is the correct colour.</li>
+     * </ol>
+     * </p>
+     *
+     * @param src  the original decoded image
+     * @param spec the target country spec
+     * @return a new {@link BufferedImage} with exactly {@code widthPx × heightPx} pixels
+     * @throws IOException if Thumbnailator fails to scale the image
+     */
     private BufferedImage buildCorrectedImage(BufferedImage src, CountrySpec spec) throws IOException {
         int tw = spec.getWidthPx(), th = spec.getHeightPx();
 

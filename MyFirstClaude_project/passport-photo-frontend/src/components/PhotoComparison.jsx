@@ -1,3 +1,17 @@
+/**
+ * Side-by-side before/after photo comparison with a download button.
+ *
+ * Renders the original and corrected photos in equal-width columns with labels.
+ * The corrected photo column has a green border to draw attention to the result.
+ * The download button triggers a programmatic anchor click to save the corrected
+ * image as `passport_photo_<country>.jpg`.
+ *
+ * @param {Object} props
+ * @param {string} props.originalUrl   - Object URL of the original uploaded photo.
+ * @param {string} props.correctedUrl  - Object URL of the corrected JPEG returned by the backend.
+ * @param {string} props.country       - Country code used to name the downloaded file.
+ * @returns {JSX.Element} The before/after comparison card with download button.
+ */
 export default function PhotoComparison({ originalUrl, correctedUrl, country }) {
   const handleDownload = () => {
     const link = document.createElement('a')

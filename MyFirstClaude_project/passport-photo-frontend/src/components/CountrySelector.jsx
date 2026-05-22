@@ -9,6 +9,19 @@ const COUNTRIES = [
   { code: 'Custom',   name: 'Custom / Other',         flag: '🌍', spec: 'Enter your own specifications' },
 ]
 
+/**
+ * Country selection dropdown with a summary card for the selected country.
+ *
+ * Renders all built-in country options (US, UK, India, Canada, Australia, UAE,
+ * Schengen) plus "Custom / Other". Selecting an option fires `onChange` with the
+ * new country code string. Below the dropdown, a card shows the selected country's
+ * flag, name, and a brief spec summary (e.g. "35×45 mm · light grey bg").
+ *
+ * @param {Object}   props
+ * @param {string}   props.country  - Currently selected country code (e.g. `"US"`, `"Custom"`).
+ * @param {Function} props.onChange - Called with the new country code string when the selection changes.
+ * @returns {JSX.Element} The country selector card.
+ */
 export default function CountrySelector({ country, onChange }) {
   const selected = COUNTRIES.find((c) => c.code === country)
 

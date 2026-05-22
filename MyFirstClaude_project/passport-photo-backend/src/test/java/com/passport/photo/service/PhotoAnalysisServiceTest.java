@@ -5,7 +5,6 @@ import com.passport.photo.model.ComplianceCheck;
 import com.passport.photo.model.CountrySpec;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockMultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -28,10 +27,10 @@ class PhotoAnalysisServiceTest {
 
     // ─── image factories ─────────────────────────────────────────────────────────
 
-    private MockMultipartFile toMockFile(BufferedImage img) throws IOException {
+    private byte[] toBytes(BufferedImage img) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", baos);
-        return new MockMultipartFile("photo", "test.jpg", "image/jpeg", baos.toByteArray());
+        return baos.toByteArray();
     }
 
     /** All-white image. Passes background check; fails face-position (uniform). */
@@ -88,7 +87,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void analyzePhoto_withValidCountry_returnsFiveChecks() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(variedCenterWhiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(variedCenterWhiteImage(600, 600)), "US");
         assertThat(result.getTotalCount()).isEqualTo(5);
         assertThat(result.getChecks()).hasSize(5);
         // country field stores the lookup key, not the spec's display name
@@ -97,7 +96,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void analyzePhoto_withUnknownCountry_throwsIllegalArgumentException() throws IOException {
-        MockMultipartFile file = toMockFile(whiteImage(100, 100));
+        MockMultipartFile file = toBytes(whiteImage(100, 100));
         assertThatThrownBy(() -> service.analyzePhoto(file, "XYZ"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Unknown country code");
@@ -105,9 +104,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void analyzePhoto_withInvalidImageBytes_throwsIllegalArgumentException() {
-        MockMultipartFile badFile = new MockMultipartFile(
-            "photo", "bad.jpg", "image/jpeg", "not-an-image".getBytes());
-        assertThatThrownBy(() -> service.analyzePhoto(badFile, "US"))
+        assertThatThrownBy(() -> service.analyzePhoto("not-an-image".getBytes(), "US"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Cannot read image");
     }
@@ -119,7 +116,7 @@ class PhotoAnalysisServiceTest {
         spec.setWidthPx(400); spec.setHeightPx(500);
         spec.setDpi(300); spec.setBackgroundColorHex("#FFFFFF");
 
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(400, 500)), spec);
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(400, 500)), spec);
         assertThat(result.getCountry()).isEqualTo("Andorra");
     }
 
@@ -130,7 +127,7 @@ class PhotoAnalysisServiceTest {
         spec.setWidthPx(400); spec.setHeightPx(500);
         spec.setDpi(300); spec.setBackgroundColorHex("#FFFFFF");
 
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(400, 500)), spec);
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(400, 500)), spec);
         assertThat(result.getCountry()).isEqualTo("Custom");
     }
 
@@ -138,7 +135,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkDimensions_passes_whenImageMeetsMinimumSize() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(0);
         assertThat(check.getRule()).isEqualTo("Image Dimensions");
         assertThat(check.isPassed()).isTrue();
@@ -146,7 +143,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkDimensions_fails_whenImageIsSmallerThanSpec() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(100, 100)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(100, 100)), "US");
         ComplianceCheck check = result.getChecks().get(0);
         assertThat(check.isPassed()).isFalse();
         assertThat(check.getMessage()).contains("smaller than required");
@@ -156,7 +153,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkAspectRatio_passes_withMatchingSquareImageForUSSpec() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(1);
         assertThat(check.getRule()).isEqualTo("Aspect Ratio");
         assertThat(check.isPassed()).isTrue();
@@ -165,7 +162,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void checkAspectRatio_fails_withExtremelyWideImage() throws IOException {
         // 1200×200 → aspect 6.0; US spec aspect 1.0 → diff 5.0 far exceeds 15 % tolerance
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(1200, 200)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(1200, 200)), "US");
         ComplianceCheck check = result.getChecks().get(1);
         assertThat(check.isPassed()).isFalse();
         assertThat(check.getMessage()).contains("centre-cropped");
@@ -175,7 +172,7 @@ class PhotoAnalysisServiceTest {
     void checkAspectRatio_passes_atExactFifteenPercentBoundary() throws IOException {
         // US spec aspect = 1.0, tolerance = 0.15
         // 115×100 → imgAspect = 1.15, diff = 0.15 = tolerance → passes (condition is <=)
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(115, 100)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(115, 100)), "US");
         ComplianceCheck check = result.getChecks().get(1);
         assertThat(check.isPassed()).isTrue();
     }
@@ -183,7 +180,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void checkAspectRatio_fails_justAboveFifteenPercentBoundary() throws IOException {
         // 116×100 → imgAspect = 1.16, diff = 0.16 > 0.15 → fails
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(116, 100)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(116, 100)), "US");
         ComplianceCheck check = result.getChecks().get(1);
         assertThat(check.isPassed()).isFalse();
     }
@@ -192,7 +189,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkBackground_passes_withAllWhiteImage() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(2);
         assertThat(check.getRule()).isEqualTo("Background Color");
         assertThat(check.isPassed()).isTrue();
@@ -200,7 +197,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkBackground_fails_withAllDarkImage() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(darkImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(darkImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(2);
         assertThat(check.isPassed()).isFalse();
         assertThat(check.getMessage()).contains("too dark");
@@ -217,7 +214,7 @@ class PhotoAnalysisServiceTest {
         g.fillRect(50, 50, 500, 500);   // 50 px dark border survives at all four corners
         g.dispose();
 
-        AnalysisResult result = service.analyzePhoto(toMockFile(img), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(img), "US");
         ComplianceCheck check = result.getChecks().get(2);
         assertThat(check.getRule()).isEqualTo("Background Color");
         assertThat(check.isPassed()).isFalse();
@@ -228,7 +225,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void checkResolution_passes_whenPixelCountMeetsSpec() throws IOException {
         // 600×600 = 360 000 px  ≥  US spec 600×600 = 360 000 px
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(3);
         assertThat(check.getRule()).isEqualTo("Resolution / Quality");
         assertThat(check.isPassed()).isTrue();
@@ -237,7 +234,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void checkResolution_fails_whenPixelCountBelowSpec() throws IOException {
         // 100×100 = 10 000 px  <  US spec 360 000 px
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(100, 100)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(100, 100)), "US");
         ComplianceCheck check = result.getChecks().get(3);
         assertThat(check.isPassed()).isFalse();
     }
@@ -247,7 +244,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void checkFacePosition_passes_withHighVarianceCenterContent() throws IOException {
         AnalysisResult result = service.analyzePhoto(
-            toMockFile(variedCenterWhiteImage(600, 600)), "US");
+            toBytes(variedCenterWhiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(4);
         assertThat(check.getRule()).isEqualTo("Face Presence (estimated)");
         assertThat(check.isPassed()).isTrue();
@@ -255,7 +252,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void checkFacePosition_fails_withUniformWhiteImage() throws IOException {
-        AnalysisResult result = service.analyzePhoto(toMockFile(whiteImage(600, 600)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(600, 600)), "US");
         ComplianceCheck check = result.getChecks().get(4);
         assertThat(check.isPassed()).isFalse();
         assertThat(check.getMessage()).contains("uniform");
@@ -266,7 +263,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void allPassed_isTrueWhenAllFiveChecksPass() throws IOException {
         AnalysisResult result = service.analyzePhoto(
-            toMockFile(variedCenterWhiteImage(600, 600)), "US");
+            toBytes(variedCenterWhiteImage(600, 600)), "US");
         assertThat(result.isAllPassed()).isTrue();
         assertThat(result.getPassedCount()).isEqualTo(5);
     }
@@ -274,7 +271,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void allPassed_isFalseWhenMultipleChecksFail() throws IOException {
         // 100×100 dark: fails dimensions, background, resolution, face-position
-        AnalysisResult result = service.analyzePhoto(toMockFile(darkImage(100, 100)), "US");
+        AnalysisResult result = service.analyzePhoto(toBytes(darkImage(100, 100)), "US");
         assertThat(result.isAllPassed()).isFalse();
         assertThat(result.getPassedCount()).isLessThan(result.getTotalCount());
     }
@@ -284,7 +281,7 @@ class PhotoAnalysisServiceTest {
     @Test
     void correctPhoto_returnsJpegWithExactTargetDimensions() throws IOException {
         byte[] corrected = service.correctPhoto(
-            toMockFile(variedCenterWhiteImage(800, 1000)), "US");
+            toBytes(variedCenterWhiteImage(800, 1000)), "US");
         BufferedImage out = ImageIO.read(new ByteArrayInputStream(corrected));
         assertThat(out).isNotNull();
         assertThat(out.getWidth()).isEqualTo(600);
@@ -297,7 +294,7 @@ class PhotoAnalysisServiceTest {
         spec.setWidthPx(413); spec.setHeightPx(531);
         spec.setDpi(300); spec.setBackgroundColorHex("#FFFFFF");
 
-        byte[] corrected = service.correctPhoto(toMockFile(variedCenterWhiteImage(600, 600)), spec);
+        byte[] corrected = service.correctPhoto(toBytes(variedCenterWhiteImage(600, 600)), spec);
         BufferedImage out = ImageIO.read(new ByteArrayInputStream(corrected));
         assertThat(out.getWidth()).isEqualTo(413);
         assertThat(out.getHeight()).isEqualTo(531);
@@ -305,9 +302,7 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void correctPhoto_withInvalidImage_throwsIllegalArgumentException() {
-        MockMultipartFile bad = new MockMultipartFile(
-            "photo", "bad.jpg", "image/jpeg", "garbage".getBytes());
-        assertThatThrownBy(() -> service.correctPhoto(bad, "US"))
+        assertThatThrownBy(() -> service.correctPhoto("garbage".getBytes(), "US"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Cannot read image");
     }
