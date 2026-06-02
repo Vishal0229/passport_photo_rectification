@@ -103,6 +103,7 @@ class PhotoControllerTest {
                 .file(minimalJpeg())
                 .param("country", "US"))
             .andExpect(status().isOk())
+            .andExpect(header().string("X-Privacy-Notice", "Photo data is processed in-memory only and is not stored on disk."))
             .andExpect(jsonPath("$.country").value("United States"))
             .andExpect(jsonPath("$.allPassed").value(true))
             .andExpect(jsonPath("$.checks").isArray());
@@ -211,6 +212,7 @@ class PhotoControllerTest {
                 .file(minimalJpeg())
                 .param("country", "US"))
             .andExpect(status().isOk())
+            .andExpect(header().string("X-Privacy-Notice", "Photo data is processed in-memory only and is not stored on disk."))
             .andExpect(content().contentType(MediaType.IMAGE_JPEG))
             .andExpect(header().string("Content-Disposition",
                 containsString("passport_photo.jpg")));
@@ -261,6 +263,142 @@ class PhotoControllerTest {
             .thenThrow(new IllegalArgumentException("Cannot read image"));
 
         mockMvc.perform(multipart("/api/correct")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Cannot read image"));
+    }
+
+    // ─── POST /api/pdf ───────────────────────────────────────────────────────────
+
+    @Test
+    void photoPdf_validRequest_returnsPdfWithAttachmentHeader() throws Exception {
+        byte[] fakePdf = new byte[]{0x25, 0x50, 0x44, 0x46}; // %PDF
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoPdf(any(), eq("US"))).thenReturn(fakePdf);
+
+        mockMvc.perform(multipart("/api/pdf")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Privacy-Notice", "Photo data is processed in-memory only and is not stored on disk."))
+            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+            .andExpect(header().string("Content-Disposition",
+                containsString("passport_photo_sheet.pdf")));
+    }
+
+    @Test
+    void photoPdf_multipleFaces_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(2);
+
+        mockMvc.perform(multipart("/api/pdf")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errorType").value("MULTIPLE_FACES"));
+    }
+
+    @Test
+    void photoPdf_withCustomSpec_returnsPdf() throws Exception {
+        byte[] fakePdf = new byte[100];
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoPdf(any(), any(CountrySpec.class))).thenReturn(fakePdf);
+
+        mockMvc.perform(multipart("/api/pdf")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(usSpec())))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_PDF));
+    }
+
+    @Test
+    void photoPdf_malformedCustomSpecJson_returns500() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+
+        mockMvc.perform(multipart("/api/pdf")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", "{not-valid-json"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.message").value(containsString("Failed to generate PDF")));
+    }
+
+    @Test
+    void photoPdf_serviceThrowsIllegalArgument_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoPdf(any(), eq("US")))
+            .thenThrow(new IllegalArgumentException("Cannot read image"));
+
+        mockMvc.perform(multipart("/api/pdf")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Cannot read image"));
+    }
+
+    // ─── POST /api/sheet ─────────────────────────────────────────────────────────
+
+    @Test
+    void photoSheet_validRequest_returnsJpegWithAttachmentHeader() throws Exception {
+        byte[] fakeJpeg = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 0x00};
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoSheet(any(), eq("US"))).thenReturn(fakeJpeg);
+
+        mockMvc.perform(multipart("/api/sheet")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Privacy-Notice", "Photo data is processed in-memory only and is not stored on disk."))
+            .andExpect(content().contentType(MediaType.IMAGE_JPEG))
+            .andExpect(header().string("Content-Disposition",
+                containsString("passport_photo_sheet.jpg")));
+    }
+
+    @Test
+    void photoSheet_multipleFaces_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(2);
+
+        mockMvc.perform(multipart("/api/sheet")
+                .file(minimalJpeg())
+                .param("country", "US"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errorType").value("MULTIPLE_FACES"));
+    }
+
+    @Test
+    void photoSheet_withCustomSpec_returnsJpeg() throws Exception {
+        byte[] fakeJpeg = new byte[100];
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoSheet(any(), any(CountrySpec.class))).thenReturn(fakeJpeg);
+
+        mockMvc.perform(multipart("/api/sheet")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(usSpec())))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.IMAGE_JPEG));
+    }
+
+    @Test
+    void photoSheet_malformedCustomSpecJson_returns500() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+
+        mockMvc.perform(multipart("/api/sheet")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", "{not-valid-json"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(jsonPath("$.message").value(containsString("Failed to generate photo sheet")));
+    }
+
+    @Test
+    void photoSheet_serviceThrowsIllegalArgument_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        when(analysisService.generatePhotoSheet(any(), eq("US")))
+            .thenThrow(new IllegalArgumentException("Cannot read image"));
+
+        mockMvc.perform(multipart("/api/sheet")
                 .file(minimalJpeg())
                 .param("country", "US"))
             .andExpect(status().isBadRequest())

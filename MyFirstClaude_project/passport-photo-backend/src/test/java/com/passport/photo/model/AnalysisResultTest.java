@@ -27,6 +27,7 @@ class AnalysisResultTest {
         assertThat(result.getSpec()).isSameAs(spec);
         assertThat(result.getChecks()).containsExactly(check);
         assertThat(result.isAllPassed()).isTrue();
+        assertThat(result.isCertified()).isTrue();
         assertThat(result.getPassedCount()).isEqualTo(1);
         assertThat(result.getTotalCount()).isEqualTo(1);
     }
@@ -39,6 +40,7 @@ class AnalysisResultTest {
         assertThat(result.getSpec()).isNull();
         assertThat(result.getChecks()).isNull();
         assertThat(result.isAllPassed()).isFalse();
+        assertThat(result.isCertified()).isFalse();
         assertThat(result.getPassedCount()).isZero();
         assertThat(result.getTotalCount()).isZero();
     }
@@ -52,6 +54,7 @@ class AnalysisResultTest {
         result.setSpec(spec);
         result.setChecks(List.of());
         result.setAllPassed(false);
+        result.setCertified(true);
         result.setPassedCount(3);
         result.setTotalCount(5);
 
@@ -59,6 +62,7 @@ class AnalysisResultTest {
         assertThat(result.getSpec()).isSameAs(spec);
         assertThat(result.getChecks()).isEmpty();
         assertThat(result.isAllPassed()).isFalse();
+        assertThat(result.isCertified()).isTrue();
         assertThat(result.getPassedCount()).isEqualTo(3);
         assertThat(result.getTotalCount()).isEqualTo(5);
     }

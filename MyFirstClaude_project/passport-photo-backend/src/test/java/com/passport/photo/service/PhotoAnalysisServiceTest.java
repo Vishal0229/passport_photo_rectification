@@ -96,8 +96,8 @@ class PhotoAnalysisServiceTest {
 
     @Test
     void analyzePhoto_withUnknownCountry_throwsIllegalArgumentException() throws IOException {
-        MockMultipartFile file = toBytes(whiteImage(100, 100));
-        assertThatThrownBy(() -> service.analyzePhoto(file, "XYZ"))
+        byte[] imageBytes = toBytes(whiteImage(100, 100));
+        assertThatThrownBy(() -> service.analyzePhoto(imageBytes, "XYZ"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Unknown country code");
     }
@@ -303,6 +303,68 @@ class PhotoAnalysisServiceTest {
     @Test
     void correctPhoto_withInvalidImage_throwsIllegalArgumentException() {
         assertThatThrownBy(() -> service.correctPhoto("garbage".getBytes(), "US"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Cannot read image");
+    }
+
+    // ─── generatePhotoSheet ──────────────────────────────────────────────────────
+
+    @Test
+    void generatePhotoSheet_returnsJpegSheetWithFixed1800x1200Dimensions() throws IOException {
+        byte[] sheet = service.generatePhotoSheet(
+            toBytes(variedCenterWhiteImage(600, 600)), "US");
+        BufferedImage out = ImageIO.read(new ByteArrayInputStream(sheet));
+        assertThat(out).isNotNull();
+        assertThat(out.getWidth()).isEqualTo(1800);
+        assertThat(out.getHeight()).isEqualTo(1200);
+    }
+
+    @Test
+    void generatePhotoSheet_withCustomSpec_returnsJpeg() throws IOException {
+        CountrySpec spec = new CountrySpec();
+        spec.setWidthPx(413); spec.setHeightPx(531);
+        spec.setDpi(300); spec.setBackgroundColorHex("#FFFFFF");
+
+        byte[] sheet = service.generatePhotoSheet(toBytes(variedCenterWhiteImage(500, 600)), spec);
+        BufferedImage out = ImageIO.read(new ByteArrayInputStream(sheet));
+        assertThat(out).isNotNull();
+        assertThat(out.getWidth()).isEqualTo(1800);
+        assertThat(out.getHeight()).isEqualTo(1200);
+    }
+
+    @Test
+    void generatePhotoSheet_withInvalidImage_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> service.generatePhotoSheet("garbage".getBytes(), "US"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Cannot read image");
+    }
+
+    // ─── generatePhotoPdf ────────────────────────────────────────────────────────
+
+    @Test
+    void generatePhotoPdf_returnsNonEmptyPdfBytes() throws IOException {
+        byte[] pdf = service.generatePhotoPdf(
+            toBytes(variedCenterWhiteImage(600, 600)), "US");
+        assertThat(pdf).isNotEmpty();
+        // PDF magic bytes: %PDF
+        assertThat(new String(pdf, 0, 4)).isEqualTo("%PDF");
+    }
+
+    @Test
+    void generatePhotoPdf_withCustomSpec_returnsPdf() throws IOException {
+        CountrySpec spec = new CountrySpec();
+        spec.setWidthPx(413); spec.setHeightPx(531);
+        spec.setWidthMm(35); spec.setHeightMm(45);
+        spec.setDpi(300); spec.setBackgroundColorHex("#FFFFFF");
+
+        byte[] pdf = service.generatePhotoPdf(toBytes(variedCenterWhiteImage(500, 600)), spec);
+        assertThat(pdf).isNotEmpty();
+        assertThat(new String(pdf, 0, 4)).isEqualTo("%PDF");
+    }
+
+    @Test
+    void generatePhotoPdf_withInvalidImage_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> service.generatePhotoPdf("garbage".getBytes(), "US"))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Cannot read image");
     }
