@@ -27,6 +27,7 @@ async function ensureLoaded() {
   if (ready) return
   if (!loadPromise) {
     loadPromise = faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
+      .catch(err => { loadPromise = null; throw err })
   }
   await loadPromise
   ready = true

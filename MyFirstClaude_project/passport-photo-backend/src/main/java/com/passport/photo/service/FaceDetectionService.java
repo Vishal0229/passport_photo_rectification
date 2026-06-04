@@ -51,36 +51,28 @@ public class FaceDetectionService {
 
     private static final Logger log = LoggerFactory.getLogger(FaceDetectionService.class);
 
-    private CascadeClassifier classifier;
-    private CascadeClassifier classifierAlt2;
+    // Paths to the extracted cascade XML files — classifiers are created per-call for thread safety.
+    private String defaultCascadePath;
+    private String alt2CascadePath;
 
     /**
-     * Loads both Haar Cascade classifiers from the classpath into temporary files.
+     * Extracts both Haar Cascade XML files to temp paths and verifies they load cleanly.
      * Called automatically by Spring after bean construction.
      *
-     * @throws IOException           if the cascade XML resource cannot be copied to a temp file
+     * @throws IOException           if a cascade XML cannot be copied to a temp file
      * @throws IllegalStateException if a cascade file is missing from the classpath or is empty
      */
     @PostConstruct
     public void init() throws IOException {
         Loader.load(CascadeClassifier.class);
-        classifier    = loadCascade("haarcascade_frontalface_default.xml");
-        classifierAlt2 = loadCascade("haarcascade_frontalface_alt2.xml");
+        defaultCascadePath = extractCascade("haarcascade_frontalface_default.xml");
+        alt2CascadePath    = extractCascade("haarcascade_frontalface_alt2.xml");
+        verifyCascade(defaultCascadePath, "haarcascade_frontalface_default.xml");
+        verifyCascade(alt2CascadePath,    "haarcascade_frontalface_alt2.xml");
         log.info("Haar Cascade face detectors ready (default + alt2).");
     }
 
-    /**
-     * Copies a classpath cascade XML resource to a temporary file and loads it.
-     *
-     * <p>OpenCV requires a filesystem path — it cannot read directly from a JAR stream.
-     * The temporary file is marked for deletion on JVM exit.</p>
-     *
-     * @param resourceName classpath resource name (e.g. {@code "haarcascade_frontalface_default.xml"})
-     * @return a loaded, non-empty {@link CascadeClassifier}
-     * @throws IOException           if the temp file cannot be created or written
-     * @throws IllegalStateException if the resource is not found or the classifier is empty after loading
-     */
-    private CascadeClassifier loadCascade(String resourceName) throws IOException {
+    private String extractCascade(String resourceName) throws IOException {
         ClassPathResource res = new ClassPathResource(resourceName);
         if (!res.exists()) {
             throw new IllegalStateException(resourceName + " not found on classpath. " +
@@ -91,14 +83,21 @@ public class FaceDetectionService {
         try (InputStream is = res.getInputStream()) {
             Files.copy(is, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
-        CascadeClassifier cc = new CascadeClassifier(tmp.getAbsolutePath());
-        if (cc.empty()) throw new IllegalStateException(resourceName + " loaded but is empty.");
-        return cc;
+        return tmp.getAbsolutePath();
+    }
+
+    private void verifyCascade(String path, String name) {
+        try (CascadeClassifier cc = new CascadeClassifier(path)) {
+            if (cc.empty()) throw new IllegalStateException(name + " loaded but is empty.");
+        }
     }
 
     /**
      * Returns the number of faces detected in the supplied raw image bytes.
-     * Throws IllegalArgumentException if the bytes cannot be decoded as an image.
+     *
+     * <p>A new {@link CascadeClassifier} is created per call so concurrent requests
+     * never share mutable native state (CascadeClassifier is not thread-safe).
+     * All native OpenCV resources are released via try-with-resources in all paths.</p>
      */
     public int countFaces(byte[] imageBytes) {
         BytePointer bp = new BytePointer(imageBytes);
@@ -112,27 +111,31 @@ public class FaceDetectionService {
             throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
         }
 
-        // First pass: strict (minNeighbors=4) — low false-positive risk
-        RectVector faces = new RectVector();
-        classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(30, 30), new Size());
-        int count = (int) faces.size();
-        faces.close();
+        try {
+            // First pass: strict (minNeighbors=4) — low false-positive risk
+            int count;
+            try (CascadeClassifier cc = new CascadeClassifier(defaultCascadePath);
+                 RectVector faces     = new RectVector()) {
+                cc.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(30, 30), new Size());
+                count = (int) faces.size();
+            }
 
-        if (count == 0) {
-            // Second pass: alt2 cascade (more pose-tolerant) + upscale 2× + equalise.
-            // Catches faces that are small, angled, or in scanned prints.
-            // Safe because the controller blocks count > 1.
-            Mat up = new Mat();
-            resize(gray, up, new Size(gray.cols() * 2, gray.rows() * 2), 0, 0, INTER_LINEAR);
-            equalizeHist(up, up);
-            RectVector faces2 = new RectVector();
-            classifierAlt2.detectMultiScale(up, faces2, 1.05, 2, 0, new Size(30, 30), new Size());
-            count = (int) faces2.size();
-            faces2.close();
-            up.close();
+            if (count == 0) {
+                // Second pass: alt2 cascade + upscale 2× + equalise.
+                // Catches faces that are small, angled, or in scanned prints.
+                // Safe because the controller blocks count > 1.
+                try (Mat up                  = new Mat();
+                     CascadeClassifier cc2   = new CascadeClassifier(alt2CascadePath);
+                     RectVector faces2       = new RectVector()) {
+                    resize(gray, up, new Size(gray.cols() * 2, gray.rows() * 2), 0, 0, INTER_LINEAR);
+                    equalizeHist(up, up);
+                    cc2.detectMultiScale(up, faces2, 1.05, 2, 0, new Size(30, 30), new Size());
+                    count = (int) faces2.size();
+                }
+            }
+            return count;
+        } finally {
+            gray.close();
         }
-
-        gray.close();
-        return count;
     }
 }

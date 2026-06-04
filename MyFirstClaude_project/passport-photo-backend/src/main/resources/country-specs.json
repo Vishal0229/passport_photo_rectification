@@ -10,7 +10,9 @@
     "backgroundColorHex": "#FFFFFF",
     "faceRatioMin": 0.50,
     "faceRatioMax": 0.69,
-    "description": "2×2 inch (51×51 mm) square photo with white or off-white background"
+    "description": "2×2 inch (51×51 mm) square photo with white or off-white background",
+    "officialLink": "https://travel.state.gov/content/travel/en/passports/requirements/photos.html",
+    "source": "U.S. Department of State"
   },
   "UK": {
     "name": "United Kingdom",
@@ -23,7 +25,9 @@
     "backgroundColorHex": "#F0F0F0",
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.75,
-    "description": "35×45 mm photo with light grey or cream plain background"
+    "description": "35×45 mm photo with light grey or cream plain background",
+    "officialLink": "https://www.gov.uk/photos-for-passports",
+    "source": "UK Government"
   },
   "India": {
     "name": "India",
@@ -36,7 +40,9 @@
     "backgroundColorHex": "#FFFFFF",
     "faceRatioMin": 0.70,
     "faceRatioMax": 0.80,
-    "description": "51×51 mm (2×2 inch) square photo with plain white background"
+    "description": "51×51 mm (2×2 inch) square photo with plain white background",
+    "officialLink": "https://assets.ctfassets.net/xxg4p8gt3sg6/65N7mZz0hfj57DM1VlnLA2/284bfc9bd711eda8a8564dad5019cc70/PASSPORT_SEVA_PHOTO_UPLOAD_INSTUCTIONS.pdf",
+    "source": "Passport Seva, Government of India"
   },
   "Canada": {
     "name": "Canada",
@@ -49,7 +55,9 @@
     "backgroundColorHex": "#FFFFFF",
     "faceRatioMin": 0.44,
     "faceRatioMax": 0.51,
-    "description": "50×70 mm photo with plain white background"
+    "description": "50×70 mm photo with plain white background",
+    "officialLink": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html",
+    "source": "Immigration, Refugees and Citizenship Canada"
   },
   "Australia": {
     "name": "Australia",
@@ -62,7 +70,9 @@
     "backgroundColorHex": "#FFFFFF",
     "faceRatioMin": 0.71,
     "faceRatioMax": 0.80,
-    "description": "35×45 mm photo with plain white or off-white background"
+    "description": "35×45 mm photo with plain white or off-white background",
+    "officialLink": "https://www.passports.gov.au/help/passport-photos",
+    "source": "Australian Passport Office"
   },
   "UAE": {
     "name": "United Arab Emirates",
@@ -75,7 +85,9 @@
     "backgroundColorHex": "#FFFFFF",
     "faceRatioMin": 0.70,
     "faceRatioMax": 0.80,
-    "description": "40×60 mm photo with plain white background"
+    "description": "40×60 mm photo with plain white background",
+    "officialLink": "https://www.icp.gov.ae/en/page/photorequirements",
+    "source": "General Directorate of Residency and Foreigners Affairs"
   },
   "Schengen": {
     "name": "Schengen (EU)",
@@ -88,6 +100,9 @@
     "backgroundColorHex": "#E8E8E8",
     "faceRatioMin": 0.71,
     "faceRatioMax": 0.80,
-    "description": "35×45 mm photo with plain light grey background (ICAO standard)"
+    "description": "35×45 mm photo with plain light grey background (ICAO standard)",
+    "officialLink": "https://www.schengenvisainfo.com/photo-requirements/",
+    "source": "ICAO / Schengen Visa Info"
   }
 }
+

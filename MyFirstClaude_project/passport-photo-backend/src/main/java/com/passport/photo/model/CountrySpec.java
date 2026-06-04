@@ -32,6 +32,10 @@ public class CountrySpec {
     private double faceRatioMax;
     /** Human-readable summary of the requirements. */
     private String description;
+    /** Official government link for photo requirements (optional). */
+    private String officialLink;
+    /** Source or authority that defined these requirements (e.g. "passport.gov"). */
+    private String source;
 
     public CountrySpec() {}
 
@@ -67,4 +71,10 @@ public class CountrySpec {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getOfficialLink() { return officialLink; }
+    public void setOfficialLink(String officialLink) { this.officialLink = officialLink; }
+
+    public String getSource() { return source; }
+    public void setSource(String source) { this.source = source; }
 }

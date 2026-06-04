@@ -8,8 +8,8 @@
  * - A spec summary box (dimensions, DPI, background, face ratio range).
  * - A disclaimer with a link to the country's official photo requirements page.
  *
- * Official links are defined in the `officialLinks` map at the bottom of this file.
- * Countries without a link simply omit the "Check official requirements →" link.
+ * Official links come from {@code spec.officialLink} returned by the backend.
+ * Countries without a link simply omit the "View official requirements" link.
  *
  * @param {Object}           props
  * @param {Object}           props.analysis             - The analysis result from `POST /api/analyze`.
@@ -22,13 +22,19 @@
  * @returns {JSX.Element} The compliance results card.
  */
 export default function ComplianceChecklist({ analysis }) {
-  const { checks, passedCount, totalCount, allPassed, spec, country } = analysis
+  const { checks, passedCount, totalCount, allPassed, certified, spec, country } = analysis
+  const isPassportReady = certified ?? allPassed
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-gray-700">Compliance Results</h2>
+      {/* Header with official source */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold text-gray-700">Compliance Results</h2>
+          {spec?.source && (
+            <p className="text-xs text-gray-400 mt-1">Verified against {spec.source}</p>
+          )}
+        </div>
         <span
           className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide ${
             allPassed
@@ -42,17 +48,34 @@ export default function ComplianceChecklist({ analysis }) {
         </span>
       </div>
 
-      {/* Overall banner */}
+      {/* Overall banner with certification badge */}
       <div
         className={`rounded-xl px-4 py-3 mb-5 flex items-center gap-3 text-sm font-medium ${
-          allPassed ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'
+          isPassportReady ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'
         }`}
       >
-        <span className="text-xl">{allPassed ? '✅' : '⚠️'}</span>
-        {allPassed
-          ? 'Photo meets all requirements — ready to correct and download!'
-          : 'Some issues found. Click "Correct Photo" to auto-fix what can be fixed.'}
+        <span className="text-xl">{isPassportReady ? '✅ Passport-ready!' : '⚠️ Needs correction'}</span>
+        <span className="text-xs">
+          {isPassportReady
+            ? 'Your photo meets all official requirements'
+            : 'Some issues found. Click "Correct Photo" to auto-fix what can be fixed.'}
+        </span>
       </div>
+
+      {/* Why this passes — shown only when certified */}
+      {isPassportReady && (
+        <div className="mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <p className="text-xs font-semibold text-green-700 mb-2">Why this photo is passport-ready</p>
+          <ul className="space-y-1">
+            {checks.map((check, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-green-700">
+                <span className="shrink-0 mt-0.5">✓</span>
+                <span>{check.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Individual checks */}
       <div className="space-y-2.5">
@@ -86,51 +109,39 @@ export default function ComplianceChecklist({ analysis }) {
         ))}
       </div>
 
-      {/* Spec summary */}
+      {/* Spec summary with detailed requirements */}
       {spec && (
-        <div className="mt-5 bg-gray-50 rounded-xl p-4 text-xs text-gray-500">
-          <p className="font-semibold text-gray-600 mb-2">{country} requirements</p>
-          <p className="mb-2 text-gray-500">{spec.description}</p>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-            <span>Size: {spec.widthPx}×{spec.heightPx} px</span>
-            <span>Print: {spec.widthMm}×{spec.heightMm} mm</span>
-            <span>DPI: {spec.dpi}</span>
-            <span>Background: {spec.backgroundColor.replace('_', ' ')}</span>
-            <span className="col-span-2">
-              Face ratio: {Math.round(spec.faceRatioMin * 100)}–{Math.round(spec.faceRatioMax * 100)}% of height
-            </span>
+        <div className="mt-5 bg-blue-50 rounded-xl p-4 text-xs text-gray-500 border border-blue-100">
+          <p className="font-semibold text-blue-700 mb-2">{country} Requirements</p>
+          <p className="mb-3 text-gray-600">{spec.description}</p>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 mb-3 pb-3 border-b border-blue-200">
+            <span><strong>Dimensions:</strong> {spec.widthPx}×{spec.heightPx} px ({spec.widthMm}×{spec.heightMm} mm)</span>
+            <span><strong>DPI:</strong> {spec.dpi}</span>
+            <span><strong>Background:</strong> {(spec.backgroundColor || '').replace('_', ' ')}</span>
+            <span><strong>Face ratio:</strong> {Math.round(spec.faceRatioMin * 100)}–{Math.round(spec.faceRatioMax * 100)}%</span>
           </div>
+          {spec.officialLink && (
+            <a
+              href={spec.officialLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              🔗 View official requirements
+            </a>
+          )}
         </div>
       )}
 
-      {/* Disclaimer */}
+      {/* Disclaimer with verified badge */}
       <div className="mt-4 flex items-start gap-2 text-xs text-gray-400 border-t border-gray-100 pt-4">
         <span className="shrink-0 mt-0.5">ℹ️</span>
         <p className="leading-relaxed">
           Specifications are based on official government guidelines but may change.
-          Always verify your final photo against your country's passport authority before submitting.{' '}
-          {officialLinks[country] && (
-            <a
-              href={officialLinks[country]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-gray-600 transition-colors"
-            >
-              Check official requirements →
-            </a>
-          )}
+          Always verify your final photo against official requirements before submitting.
         </p>
       </div>
     </div>
   )
 }
 
-const officialLinks = {
-  US:        'https://travel.state.gov/content/travel/en/passports/requirements/photos.html',
-  UK:        'https://www.gov.uk/photos-for-passports',
-  India:     'https://assets.ctfassets.net/xxg4p8gt3sg6/65N7mZz0hfj57DM1VlnLA2/284bfc9bd711eda8a8564dad5019cc70/PASSPORT_SEVA_PHOTO_UPLOAD_INSTUCTIONS.pdf',
-  Canada:    'https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html',
-  Australia: 'https://www.passports.gov.au/help/passport-photos',
-  UAE:       'https://www.icp.gov.ae/en/page/photorequirements',
-  Schengen:  'https://www.schengenvisainfo.com/photo-requirements/',
-}

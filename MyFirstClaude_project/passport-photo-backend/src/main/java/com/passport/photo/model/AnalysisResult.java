@@ -20,6 +20,8 @@ public class AnalysisResult {
     private List<ComplianceCheck> checks;
     /** {@code true} only when every check in {@link #checks} passed. */
     private boolean allPassed;
+    /** {@code true} when the photo meets all official requirements and is passport-ready. Mirrors {@link #allPassed}. */
+    private boolean certified;
     /** Number of checks that passed. */
     private int passedCount;
     /** Total number of checks evaluated (always 5). */
@@ -44,6 +46,7 @@ public class AnalysisResult {
         this.spec = spec;
         this.checks = checks;
         this.allPassed = allPassed;
+        this.certified = allPassed;
         this.passedCount = passedCount;
         this.totalCount = totalCount;
     }
@@ -59,6 +62,9 @@ public class AnalysisResult {
 
     public boolean isAllPassed() { return allPassed; }
     public void setAllPassed(boolean allPassed) { this.allPassed = allPassed; }
+
+    public boolean isCertified() { return certified; }
+    public void setCertified(boolean certified) { this.certified = certified; }
 
     public int getPassedCount() { return passedCount; }
     public void setPassedCount(int passedCount) { this.passedCount = passedCount; }

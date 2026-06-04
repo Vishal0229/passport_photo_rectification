@@ -23,6 +23,7 @@ import { countFaces } from '../services/faceDetection'
 export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl }) {
   const [dragOver, setDragOver] = useState(false)
   const [checking, setChecking] = useState(false)
+  // { heading, message } or null
   const [faceError, setFaceError] = useState(null)
   const [localPreviewUrl, setLocalPreviewUrl] = useState(null)
   const inputRef = useRef(null)
@@ -39,7 +40,7 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
     if (!file || !file.type.startsWith('image/')) return
 
     if (file.size > MAX_SIZE_BYTES) {
-      setFaceError('File is too large. Please upload an image smaller than 15 MB.')
+      setFaceError({ heading: 'File too large', message: 'Please upload an image smaller than 15 MB.' })
       if (inputRef.current) inputRef.current.value = ''
       return
     }
@@ -58,9 +59,10 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
       const faces = await countFaces(file)
 
       if (faces > 1) {
-        setFaceError(
-          `${faces} people detected. Passport photos must show exactly one person — please upload a solo photo.`
-        )
+        setFaceError({
+          heading: 'Multiple people detected',
+          message: `${faces} people detected. Passport photos must show exactly one person — please upload a solo photo.`,
+        })
         if (inputRef.current) inputRef.current.value = ''
         return
       }
@@ -69,9 +71,10 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
     } catch (err) {
       // Model load failure or decode error — block the photo and tell the user
       console.error('Face detection error:', err)
-      setFaceError(
-        'Could not run face detection. Make sure the app is fully loaded and try again.'
-      )
+      setFaceError({
+        heading: 'Face detection unavailable',
+        message: 'Could not run face detection. Make sure the app is fully loaded and try again.',
+      })
       if (inputRef.current) inputRef.current.value = ''
     } finally {
       setChecking(false)
@@ -99,7 +102,7 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
             ? 'border-blue-300 bg-blue-50 cursor-wait'
             : dragOver
             ? 'border-blue-500 bg-blue-50 scale-[1.01]'
-            : faceError
+            : faceError != null
             ? 'border-red-300 bg-red-50'
             : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
         }`}
@@ -161,10 +164,10 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
       {/* Upload error */}
       {faceError && (
         <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
-          <span className="text-xl shrink-0 mt-0.5">👥</span>
+          <span className="text-xl shrink-0 mt-0.5">⚠️</span>
           <div className="flex-1">
-            <p className="text-red-700 text-sm font-semibold">Multiple people detected</p>
-            <p className="text-red-600 text-xs mt-0.5 leading-relaxed">{faceError}</p>
+            <p className="text-red-700 text-sm font-semibold">{faceError.heading}</p>
+            <p className="text-red-600 text-xs mt-0.5 leading-relaxed">{faceError.message}</p>
             <button
               onClick={(e) => { e.stopPropagation(); setFaceError(null); open() }}
               className="mt-2 text-xs text-red-500 underline hover:text-red-700"

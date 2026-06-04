@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import UploadZone from './components/UploadZone'
 import CountrySelector from './components/CountrySelector'
 import CustomSpecForm from './components/CustomSpecForm'
 import ComplianceChecklist from './components/ComplianceChecklist'
 import PhotoComparison from './components/PhotoComparison'
-import { analyzePhoto, correctPhoto } from './services/api'
+import { analyzePhoto, correctPhoto, downloadPhotoSheet, downloadPhotoPdf } from './services/api'
 
 const DEFAULT_CUSTOM_SPEC = {
   name: '',
@@ -57,9 +57,13 @@ export default function App() {
   const [correctedUrl, setCorrectedUrl] = useState(null)
   const [loading, setLoading] = useState(false)
   const [correcting, setCorrecting] = useState(false)
+  const [downloadingSheet, setDownloadingSheet] = useState(false)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [error, setError] = useState(null)
   const [installPrompt, setInstallPrompt] = useState(null)
   const [uploadKey, setUploadKey] = useState(0)
+  // Incremented on every new analyze/correct call; stale responses check against this before updating state.
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
     const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
@@ -83,6 +87,7 @@ export default function App() {
   }
 
   const handleCountryChange = (c) => {
+    if (correctedUrl) URL.revokeObjectURL(correctedUrl)
     setCountry(c)
     setAnalysis(null)
     setCorrectedUrl(null)
@@ -91,14 +96,17 @@ export default function App() {
 
   const handleAnalyze = async () => {
     if (!photo) return
+    const id = ++requestIdRef.current
     setLoading(true)
     setError(null)
     setAnalysis(null)
     if (correctedUrl) { URL.revokeObjectURL(correctedUrl); setCorrectedUrl(null) }
     try {
       const result = await analyzePhoto(photo, country, country === 'Custom' ? customSpec : null)
+      if (id !== requestIdRef.current) return
       setAnalysis(result)
     } catch (err) {
+      if (id !== requestIdRef.current) return
       const msg = err.response?.data?.message || err.message || 'Unknown error'
       setError(
         msg.includes('Network Error') || msg.includes('ECONNREFUSED')
@@ -106,27 +114,75 @@ export default function App() {
           : `Analysis failed: ${msg}`
       )
     } finally {
-      setLoading(false)
+      if (id === requestIdRef.current) setLoading(false)
     }
   }
 
   const handleCorrect = async () => {
     if (!photo) return
+    const id = ++requestIdRef.current
     setCorrecting(true)
     setError(null)
     try {
       const blob = await correctPhoto(photo, country, country === 'Custom' ? customSpec : null)
+      if (id !== requestIdRef.current) return
       if (correctedUrl) URL.revokeObjectURL(correctedUrl)
       setCorrectedUrl(URL.createObjectURL(blob))
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Unknown error'
+      if (id !== requestIdRef.current) return
+      const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
       setError(`Correction failed: ${msg}`)
     } finally {
-      setCorrecting(false)
+      if (id === requestIdRef.current) setCorrecting(false)
+    }
+  }
+
+  const handleDownloadSheet = async () => {
+    if (!photo) return
+    setDownloadingSheet(true)
+    setError(null)
+    try {
+      const blob = await downloadPhotoSheet(photo, country, country === 'Custom' ? customSpec : null)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `passport_sheet_${country.toLowerCase()}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
+      setError(`Sheet download failed: ${msg}`)
+    } finally {
+      setDownloadingSheet(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!photo) return
+    setDownloadingPdf(true)
+    setError(null)
+    try {
+      const blob = await downloadPhotoPdf(photo, country, country === 'Custom' ? customSpec : null)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `passport_sheet_${country.toLowerCase()}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
+      setError(`PDF download failed: ${msg}`)
+    } finally {
+      setDownloadingPdf(false)
     }
   }
 
   const handleReset = () => {
+    requestIdRef.current++   // invalidate any in-flight analyze/correct response
     if (photoUrl) URL.revokeObjectURL(photoUrl)
     if (correctedUrl) URL.revokeObjectURL(correctedUrl)
     setPhoto(null)
@@ -134,6 +190,8 @@ export default function App() {
     setAnalysis(null)
     setCorrectedUrl(null)
     setError(null)
+    setLoading(false)
+    setCorrecting(false)
     setUploadKey((k) => k + 1)
   }
 
@@ -232,6 +290,10 @@ export default function App() {
             originalUrl={photoUrl}
             correctedUrl={correctedUrl}
             country={country}
+            onDownloadSheet={handleDownloadSheet}
+            sheetLoading={downloadingSheet}
+            onDownloadPdf={handleDownloadPdf}
+            pdfLoading={downloadingPdf}
           />
         )}
 

@@ -6,6 +6,12 @@ import com.passport.photo.model.AnalysisResult;
 import com.passport.photo.model.ComplianceCheck;
 import com.passport.photo.model.CountrySpec;
 import net.coobird.thumbnailator.Thumbnails;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -16,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -49,11 +56,9 @@ public class PhotoAnalysisService {
      * @throws RuntimeException if the file is missing or cannot be parsed
      */
     public PhotoAnalysisService() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            InputStream is = getClass().getResourceAsStream("/country-specs.json");
+        try (InputStream is = getClass().getResourceAsStream("/country-specs.json")) {
             if (is == null) throw new RuntimeException("country-specs.json not found on classpath");
-            countrySpecs = mapper.readValue(is, new TypeReference<>() {});
+            countrySpecs = new ObjectMapper().readValue(is, new TypeReference<>() {});
         } catch (IOException e) {
             throw new RuntimeException("Failed to load country specs", e);
         }
@@ -149,12 +154,140 @@ public class PhotoAnalysisService {
     }
 
     /**
+     * Generates a print-ready 4×6" sheet (1800×1200 px at 300 DPI) tiling as many
+     * copies of the corrected passport photo as fit with a 15 px gutter.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param country    country code key (e.g. {@code "US"})
+     * @return JPEG bytes of the print sheet
+     * @throws IllegalArgumentException if the country code is unknown or the image cannot be read
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] generatePhotoSheet(byte[] imageBytes, String country) throws IOException {
+        return generatePhotoSheet(imageBytes, getSpec(country));
+    }
+
+    /**
+     * Generates a print-ready 4×6" sheet tiling corrected passport photos.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param spec       the target {@link CountrySpec}
+     * @return JPEG bytes of the print sheet
+     * @throws IllegalArgumentException if the image cannot be decoded
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] generatePhotoSheet(byte[] imageBytes, CountrySpec spec) throws IOException {
+        BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
+
+        BufferedImage corrected = buildCorrectedImage(original, spec);
+
+        int pw = spec.getWidthPx(), ph = spec.getHeightPx();
+        int sheetW = 1800, sheetH = 1200;  // 4×6" landscape at 300 DPI
+        int gutter = 15;
+
+        int cols = Math.max(1, (sheetW + gutter) / (pw + gutter));
+        int rows = Math.max(1, (sheetH + gutter) / (ph + gutter));
+
+        int usedW = cols * pw + (cols - 1) * gutter;
+        int usedH = rows * ph + (rows - 1) * gutter;
+        int offsetX = (sheetW - usedW) / 2;
+        int offsetY = (sheetH - usedH) / 2;
+
+        BufferedImage sheet = new BufferedImage(sheetW, sheetH, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, sheetW, sheetH);
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < cols; col++) {
+                int x = offsetX + col * (pw + gutter);
+                int y = offsetY + row * (ph + gutter);
+                g.drawImage(corrected, x, y, pw, ph, null);
+            }
+        }
+        g.dispose();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(sheet, "jpg", baos);
+        return baos.toByteArray();
+    }
+
+    /**
+     * Generates a print-ready A4 PDF tiling as many copies of the corrected passport photo
+     * as fit with an 8 pt gutter (~3 mm). Photos are sized to their physical mm dimensions
+     * at 72 pt/inch so the PDF prints at the correct size on any A4 printer.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param country    country code key (e.g. {@code "UK"})
+     * @return PDF bytes ready for download
+     * @throws IllegalArgumentException if the country code is unknown or the image cannot be read
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] generatePhotoPdf(byte[] imageBytes, String country) throws IOException {
+        return generatePhotoPdf(imageBytes, getSpec(country));
+    }
+
+    /**
+     * Generates a print-ready A4 PDF tiling corrected passport photos.
+     *
+     * @param imageBytes raw bytes of the uploaded image
+     * @param spec       the target {@link CountrySpec}
+     * @return PDF bytes ready for download
+     * @throws IllegalArgumentException if the image cannot be decoded
+     * @throws IOException              if an I/O error occurs
+     */
+    public byte[] generatePhotoPdf(byte[] imageBytes, CountrySpec spec) throws IOException {
+        BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
+
+        BufferedImage corrected = buildCorrectedImage(original, spec);
+
+        // Convert mm → PDF points (72 pt = 1 inch = 25.4 mm)
+        float photoWPt = (float) (spec.getWidthMm()  / 25.4 * 72);
+        float photoHPt = (float) (spec.getHeightMm() / 25.4 * 72);
+        float gutterPt = 8f;
+
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            float pageW = page.getMediaBox().getWidth();   // 595.28 pt
+            float pageH = page.getMediaBox().getHeight();  // 841.89 pt
+
+            int cols = Math.max(1, (int) ((pageW + gutterPt) / (photoWPt + gutterPt)));
+            int rows = Math.max(1, (int) ((pageH + gutterPt) / (photoHPt + gutterPt)));
+
+            float usedW = cols * photoWPt + (cols - 1) * gutterPt;
+            float usedH = rows * photoHPt + (rows - 1) * gutterPt;
+            float offsetX = (pageW - usedW) / 2f;
+            float offsetY = (pageH - usedH) / 2f;
+
+            PDImageXObject pdImage = JPEGFactory.createFromImage(document, corrected);
+
+            try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
+                for (int row = 0; row < rows; row++) {
+                    for (int col = 0; col < cols; col++) {
+                        float x = offsetX + col * (photoWPt + gutterPt);
+                        // PDFBox origin is bottom-left; row 0 is the top row on the page
+                        float y = pageH - offsetY - (row + 1) * photoHPt - row * gutterPt;
+                        cs.drawImage(pdImage, x, y, photoWPt, photoHPt);
+                    }
+                }
+            }
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            document.save(baos);
+            return baos.toByteArray();
+        }
+    }
+
+    /**
      * Returns the full map of built-in country specifications keyed by country code.
      *
      * @return unmodifiable view of the loaded country specs
      */
     public Map<String, CountrySpec> getCountrySpecs() {
-        return countrySpecs;
+        return Collections.unmodifiableMap(countrySpecs);
     }
 
     /**
@@ -219,6 +352,11 @@ public class PhotoAnalysisService {
      */
     private ComplianceCheck checkBackground(BufferedImage image, CountrySpec spec) {
         int radius = Math.min(30, Math.min(image.getWidth(), image.getHeight()) / 8);
+        if (radius == 0) {
+            return new ComplianceCheck("Background Color", false,
+                    "Image is too small to sample background — ensure a plain white/light background",
+                    spec.getBackgroundColorHex() + " (plain light)", "Image too small to sample");
+        }
         int bright = 0, total = 0;
         for (int x = 0; x < radius; x++) {
             for (int y = 0; y < radius; y++) {

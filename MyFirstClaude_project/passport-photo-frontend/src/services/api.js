@@ -3,6 +3,22 @@ import axios from 'axios'
 const BASE_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}/api`
 
 /**
+ * Blob endpoints (correct, sheet, pdf) receive error bodies as raw Blobs.
+ * This helper reads the Blob as text and parses the JSON message so callers
+ * get a useful string instead of undefined.
+ */
+async function extractBlobErrorMessage(err) {
+  if (err.response?.data instanceof Blob) {
+    try {
+      const text = await err.response.data.text()
+      const json = JSON.parse(text)
+      if (json?.message) return json.message
+    } catch (_) { /* ignore parse failures */ }
+  }
+  return err.response?.data?.message || err.message || 'Unknown error'
+}
+
+/**
  * Submits a photo to `POST /api/analyze` and returns the compliance analysis result.
  *
  * @param {File}        photo       - The image file to analyze (JPEG, PNG, or WEBP).
@@ -39,12 +55,17 @@ export async function downloadPhotoPdf(photo, country, customSpec) {
   form.append('photo', photo)
   form.append('country', country)
   if (customSpec) form.append('customSpec', JSON.stringify(customSpec))
-  const res = await axios.post(`${BASE_URL}/pdf`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    responseType: 'blob',
-    timeout: 60000,
-  })
-  return res.data
+  try {
+    const res = await axios.post(`${BASE_URL}/pdf`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      responseType: 'blob',
+      timeout: 60000,
+    })
+    return res.data
+  } catch (err) {
+    err.humanMessage = await extractBlobErrorMessage(err)
+    throw err
+  }
 }
 
 /**
@@ -62,12 +83,17 @@ export async function downloadPhotoSheet(photo, country, customSpec) {
   form.append('photo', photo)
   form.append('country', country)
   if (customSpec) form.append('customSpec', JSON.stringify(customSpec))
-  const res = await axios.post(`${BASE_URL}/sheet`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    responseType: 'blob',
-    timeout: 60000,
-  })
-  return res.data
+  try {
+    const res = await axios.post(`${BASE_URL}/sheet`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      responseType: 'blob',
+      timeout: 60000,
+    })
+    return res.data
+  } catch (err) {
+    err.humanMessage = await extractBlobErrorMessage(err)
+    throw err
+  }
 }
 
 /**
@@ -85,10 +111,15 @@ export async function correctPhoto(photo, country, customSpec) {
   form.append('photo', photo)
   form.append('country', country)
   if (customSpec) form.append('customSpec', JSON.stringify(customSpec))
-  const res = await axios.post(`${BASE_URL}/correct`, form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    responseType: 'blob',
-    timeout: 60000,
-  })
-  return res.data
+  try {
+    const res = await axios.post(`${BASE_URL}/correct`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      responseType: 'blob',
+      timeout: 60000,
+    })
+    return res.data
+  } catch (err) {
+    err.humanMessage = await extractBlobErrorMessage(err)
+    throw err
+  }
 }

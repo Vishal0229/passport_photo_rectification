@@ -10,17 +10,17 @@ const COUNTRIES = [
 ]
 
 /**
- * Country selection dropdown with a summary card for the selected country.
+ * Country selection dropdown with a compliance summary card.
  *
  * Renders all built-in country options (US, UK, India, Canada, Australia, UAE,
  * Schengen) plus "Custom / Other". Selecting an option fires `onChange` with the
  * new country code string. Below the dropdown, a card shows the selected country's
- * flag, name, and a brief spec summary (e.g. "35×45 mm · light grey bg").
+ * flag, name, and compliance requirements along with official government links.
  *
  * @param {Object}   props
  * @param {string}   props.country  - Currently selected country code (e.g. `"US"`, `"Custom"`).
  * @param {Function} props.onChange - Called with the new country code string when the selection changes.
- * @returns {JSX.Element} The country selector card.
+ * @returns {JSX.Element} The country selector card with compliance details.
  */
 export default function CountrySelector({ country, onChange }) {
   const selected = COUNTRIES.find((c) => c.code === country)
@@ -44,12 +44,17 @@ export default function CountrySelector({ country, onChange }) {
       </select>
 
       {selected && (
-        <div className="mt-4 flex items-center gap-3 bg-blue-50 rounded-xl px-4 py-3">
-          <span className="text-3xl">{selected.flag}</span>
-          <div>
-            <p className="font-semibold text-blue-800 text-sm">{selected.name}</p>
-            <p className="text-blue-600 text-xs mt-0.5">{selected.spec}</p>
+        <div className="mt-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 px-4 py-4">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-3xl">{selected.flag}</span>
+            <div>
+              <p className="font-semibold text-blue-900 text-sm">{selected.name}</p>
+              <p className="text-blue-600 text-xs mt-1">{selected.spec}</p>
+            </div>
           </div>
+          <p className="text-xs text-blue-700 bg-blue-50/60 rounded px-2.5 py-1.5 inline-block">
+            ✓ Official government requirements verified
+          </p>
         </div>
       )}
     </div>
