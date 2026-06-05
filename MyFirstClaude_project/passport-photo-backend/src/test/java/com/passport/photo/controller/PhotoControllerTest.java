@@ -404,4 +404,175 @@ class PhotoControllerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Cannot read image"));
     }
+
+    // ─── validateCustomSpecInput — country=Custom without body ───────────────────
+
+    @Test
+    void analyzePhoto_customCountryWithoutSpec_returns400() throws Exception {
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("customSpec JSON body is required")));
+    }
+
+    @Test
+    void correctPhoto_customCountryWithoutSpec_returns400() throws Exception {
+        mockMvc.perform(multipart("/api/correct")
+                .file(minimalJpeg())
+                .param("country", "Custom"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("customSpec JSON body is required")));
+    }
+
+    // ─── validateCustomSpecInput — oversized JSON ────────────────────────────────
+
+    @Test
+    void analyzePhoto_oversizedCustomSpecJson_returns400() throws Exception {
+        String hugeJson = "{\"name\":\"X\",\"pad\":\"" + "A".repeat(4100) + "\"}";
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", hugeJson))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("must not exceed 4096 characters")));
+    }
+
+    // ─── validateCustomSpec — invalid dimensions ─────────────────────────────────
+
+    @Test
+    void analyzePhoto_customSpecZeroWidth_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setWidthPx(0);
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("widthPx and heightPx must be greater than 0")));
+    }
+
+    @Test
+    void analyzePhoto_customSpecNegativeHeight_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setHeightPx(-1);
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("widthPx and heightPx must be greater than 0")));
+    }
+
+    @Test
+    void analyzePhoto_customSpecWidthExceedsMax_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setWidthPx(3001);
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("cannot exceed 3000")));
+    }
+
+    @Test
+    void analyzePhoto_customSpecHeightExceedsMax_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setHeightPx(3001);
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("cannot exceed 3000")));
+    }
+
+    // ─── validateCustomSpec — invalid backgroundColorHex ────────────────────────
+
+    @Test
+    void analyzePhoto_customSpecNullHex_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setBackgroundColorHex(null);
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("backgroundColorHex must be a valid 6-digit hex")));
+    }
+
+    @Test
+    void analyzePhoto_customSpecInvalidHexFormat_returns400() throws Exception {
+        when(faceDetectionService.countFaces(any())).thenReturn(0);
+        CountrySpec bad = usSpec(); bad.setBackgroundColorHex("white");
+
+        mockMvc.perform(multipart("/api/analyze")
+                .file(minimalJpeg())
+                .param("country", "Custom")
+                .param("customSpec", json.writeValueAsString(bad)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value(containsString("backgroundColorHex must be a valid 6-digit hex")));
+    }
+
+    // ─── POST /api/log ───────────────────────────────────────────────────────────
+
+    @Test
+    void clientLog_infoLevel_returns204() throws Exception {
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"level\":\"info\",\"message\":\"test msg\",\"context\":\"{}\"}"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void clientLog_warnLevel_returns204() throws Exception {
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"level\":\"warn\",\"message\":\"something odd\",\"context\":\"\"}"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void clientLog_errorLevel_returns204() throws Exception {
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"level\":\"error\",\"message\":\"crash\",\"context\":\"stack trace\"}"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void clientLog_unknownLevel_defaultsToErrorAndReturns204() throws Exception {
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"level\":\"verbose\",\"message\":\"debug info\",\"context\":\"\"}"))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void clientLog_longMessageTruncated_returns204() throws Exception {
+        String longMessage  = "M".repeat(600);
+        String longContext  = "C".repeat(1100);
+        String body = json.writeValueAsString(
+            Map.of("level", "error", "message", longMessage, "context", longContext));
+
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void clientLog_missingFields_usesDefaults_returns204() throws Exception {
+        mockMvc.perform(post("/api/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isNoContent());
+    }
 }
