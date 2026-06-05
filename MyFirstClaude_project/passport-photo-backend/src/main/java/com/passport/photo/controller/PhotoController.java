@@ -325,6 +325,35 @@ public class PhotoController {
         return null;
     }
 
+    /**
+     * Receives a structured log event from the browser and writes it via the server-side logger.
+     *
+     * <p>This is the sink for both explicit catch-block logging (Option A) and the global
+     * {@code window.onerror} / {@code window.onunhandledrejection} handlers (Option C).
+     * All entries are prefixed {@code [FRONTEND]} so they are easy to grep in the log file.</p>
+     *
+     * @param payload JSON body with {@code level} (info/warn/error), {@code message}, and
+     *                {@code context} (arbitrary string, typically serialised JSON)
+     * @return 204 No Content
+     */
+    @PostMapping(value = "/log", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> clientLog(@RequestBody Map<String, Object> payload) {
+        String level   = sanitizeLog(String.valueOf(payload.getOrDefault("level",   "error")), 10);
+        String message = sanitizeLog(String.valueOf(payload.getOrDefault("message", "")),      500);
+        String context = sanitizeLog(String.valueOf(payload.getOrDefault("context", "")),     1000);
+        switch (level) {
+            case "info" -> log.info ("[FRONTEND] {} — {}", message, context);
+            case "warn" -> log.warn ("[FRONTEND] {} — {}", message, context);
+            default     -> log.error("[FRONTEND] {} — {}", message, context);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    private static String sanitizeLog(String s, int maxLen) {
+        if (s == null) return "";
+        return s.length() > maxLen ? s.substring(0, maxLen) + "…" : s;
+    }
+
     private void wipeBytes(byte[] bytes) {
         if (bytes != null) {
             Arrays.fill(bytes, (byte) 0);

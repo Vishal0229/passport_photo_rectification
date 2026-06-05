@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { countFaces } from '../services/faceDetection'
+import { logger } from '../services/logger'
 
 /**
  * Drag-and-drop photo upload zone with inline browser-side face detection.
@@ -69,8 +70,7 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
 
       onPhotoSelect(file)
     } catch (err) {
-      // Model load failure or decode error — block the photo and tell the user
-      console.error('Face detection error:', err)
+      logger.error('Face detection error', { message: err.message, stack: err.stack?.substring(0, 500) })
       setFaceError({
         heading: 'Face detection unavailable',
         message: 'Could not run face detection. Make sure the app is fully loaded and try again.',

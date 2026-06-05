@@ -5,6 +5,7 @@ import CustomSpecForm from './components/CustomSpecForm'
 import ComplianceChecklist from './components/ComplianceChecklist'
 import PhotoComparison from './components/PhotoComparison'
 import { analyzePhoto, correctPhoto, downloadPhotoSheet, downloadPhotoPdf } from './services/api'
+import { logger } from './services/logger'
 
 const DEFAULT_CUSTOM_SPEC = {
   name: '',
@@ -108,6 +109,7 @@ export default function App() {
     } catch (err) {
       if (id !== requestIdRef.current) return
       const msg = err.response?.data?.message || err.message || 'Unknown error'
+      logger.error('POST /api/analyze failed', { country, message: msg })
       setError(
         msg.includes('Network Error') || msg.includes('ECONNREFUSED')
           ? 'Cannot reach the backend. Make sure Spring Boot is running on port 8080.'
@@ -131,6 +133,7 @@ export default function App() {
     } catch (err) {
       if (id !== requestIdRef.current) return
       const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
+      logger.error('POST /api/correct failed', { country, message: msg })
       setError(`Correction failed: ${msg}`)
     } finally {
       if (id === requestIdRef.current) setCorrecting(false)
@@ -153,6 +156,7 @@ export default function App() {
       URL.revokeObjectURL(url)
     } catch (err) {
       const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
+      logger.error('POST /api/sheet failed', { country, message: msg })
       setError(`Sheet download failed: ${msg}`)
     } finally {
       setDownloadingSheet(false)
@@ -175,6 +179,7 @@ export default function App() {
       URL.revokeObjectURL(url)
     } catch (err) {
       const msg = err.humanMessage || err.response?.data?.message || err.message || 'Unknown error'
+      logger.error('POST /api/pdf failed', { country, message: msg })
       setError(`PDF download failed: ${msg}`)
     } finally {
       setDownloadingPdf(false)
