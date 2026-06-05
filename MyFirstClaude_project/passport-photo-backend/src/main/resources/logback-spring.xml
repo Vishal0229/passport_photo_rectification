@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- ── Console appender (preserves existing terminal output) ───────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%15.15t] %-40.40logger{39} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Rolling file appender ────────────────────────────────────────── -->
+    <!-- Writes to logs/passport-photo.log (relative to the working dir,    -->
+    <!-- i.e. passport-photo-backend/logs/).                                -->
+    <!-- Rolls daily and when a file hits 10 MB; keeps 30 days / 500 MB.   -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/passport-photo.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/passport-photo.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <!-- Full timestamp and PID in the file for post-mortem analysis -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level ${PID:- } [%t] %logger{50} : %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Application loggers ──────────────────────────────────────────── -->
+    <!-- Our code at INFO so every log.info/warn/error call is captured.    -->
+    <logger name="com.passport.photo" level="INFO" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </logger>
+
+    <!-- ── Root logger ──────────────────────────────────────────────────── -->
+    <!-- Spring / Tomcat / library output at INFO — goes to both sinks.     -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

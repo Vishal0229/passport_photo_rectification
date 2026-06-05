@@ -5,6 +5,8 @@ import com.passport.photo.model.AnalysisResult;
 import com.passport.photo.model.CountrySpec;
 import com.passport.photo.service.FaceDetectionService;
 import com.passport.photo.service.PhotoAnalysisService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api")
 public class PhotoController {
+
+    private static final Logger log = LoggerFactory.getLogger(PhotoController.class);
 
     private static final Set<String> ALLOWED_TYPES =
             Set.of("image/jpeg", "image/png", "image/webp");
@@ -103,8 +107,10 @@ public class PhotoController {
                     .body(result);
 
         } catch (IllegalArgumentException e) {
+            log.warn("POST /analyze rejected — country={}: {}", country, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (IOException e) {
+            log.error("POST /analyze failed — country={}", country, e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", "Failed to process image: " + e.getMessage()));
         } finally {
@@ -158,8 +164,10 @@ public class PhotoController {
                     .body(corrected);
 
         } catch (IllegalArgumentException e) {
+            log.warn("POST /correct rejected — country={}: {}", country, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (IOException e) {
+            log.error("POST /correct failed — country={}", country, e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", "Failed to correct image: " + e.getMessage()));
         } finally {
@@ -211,8 +219,10 @@ public class PhotoController {
                     .body(pdf);
 
         } catch (IllegalArgumentException e) {
+            log.warn("POST /pdf rejected — country={}: {}", country, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (IOException e) {
+            log.error("POST /pdf failed — country={}", country, e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", "Failed to generate PDF: " + e.getMessage()));
         } finally {
@@ -266,8 +276,10 @@ public class PhotoController {
                     .body(sheet);
 
         } catch (IllegalArgumentException e) {
+            log.warn("POST /sheet rejected — country={}: {}", country, e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (IOException e) {
+            log.error("POST /sheet failed — country={}", country, e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", "Failed to generate photo sheet: " + e.getMessage()));
         } finally {

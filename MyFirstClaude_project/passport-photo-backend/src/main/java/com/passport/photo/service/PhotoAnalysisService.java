@@ -12,6 +12,8 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -47,6 +49,8 @@ import java.util.Map;
  */
 @Service
 public class PhotoAnalysisService {
+
+    private static final Logger log = LoggerFactory.getLogger(PhotoAnalysisService.class);
 
     private final Map<String, CountrySpec> countrySpecs;
 
@@ -479,7 +483,11 @@ public class PhotoAnalysisService {
 
         // Fill background
         try { g.setColor(Color.decode(spec.getBackgroundColorHex())); }
-        catch (NumberFormatException e) { g.setColor(Color.WHITE); }
+        catch (NumberFormatException e) {
+            log.warn("Invalid backgroundColorHex '{}' for spec '{}' — falling back to white",
+                    spec.getBackgroundColorHex(), spec.getName());
+            g.setColor(Color.WHITE);
+        }
         g.fillRect(0, 0, tw, th);
 
         // Centre-horizontally; slight top-bias vertically to keep face in frame
