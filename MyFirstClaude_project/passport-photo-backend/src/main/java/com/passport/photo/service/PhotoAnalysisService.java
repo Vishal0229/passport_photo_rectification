@@ -318,10 +318,17 @@ public class PhotoAnalysisService {
         boolean passed = image.getWidth() >= spec.getWidthPx() && image.getHeight() >= spec.getHeightPx();
         String actual   = image.getWidth() + "×" + image.getHeight() + " px";
         String expected = "≥ " + spec.getWidthPx() + "×" + spec.getHeightPx() + " px";
-        return new ComplianceCheck("Image Dimensions", passed,
-                passed ? "Image meets the minimum pixel dimensions"
-                       : "Image is smaller than required — the corrected photo may be upscaled",
-                expected, actual);
+        String message;
+        if (passed) {
+            message = "Image meets the minimum pixel dimensions";
+        } else {
+            double scale = Math.max(
+                    (double) spec.getWidthPx()  / image.getWidth(),
+                    (double) spec.getHeightPx() / image.getHeight());
+            message = String.format(
+                    "Image is %.1f× too small — correction will upscale and may reduce quality", scale);
+        }
+        return new ComplianceCheck("Image Dimensions", passed, message, expected, actual);
     }
 
     /**

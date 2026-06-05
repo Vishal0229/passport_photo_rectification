@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import UploadZone from './components/UploadZone'
 import CountrySelector from './components/CountrySelector'
 import CustomSpecForm from './components/CustomSpecForm'
+import ScaleWarning from './components/ScaleWarning'
 import ComplianceChecklist from './components/ComplianceChecklist'
 import PhotoComparison from './components/PhotoComparison'
 import { analyzePhoto, correctPhoto, downloadPhotoSheet, downloadPhotoPdf } from './services/api'
@@ -52,6 +53,8 @@ function Spinner() {
 export default function App() {
   const [photo, setPhoto] = useState(null)
   const [photoUrl, setPhotoUrl] = useState(null)
+  const [photoDimensions, setPhotoDimensions] = useState(null)
+  const [countrySpecs, setCountrySpecs] = useState(null)
   const [country, setCountry] = useState('US')
   const [customSpec, setCustomSpec] = useState(DEFAULT_CUSTOM_SPEC)
   const [analysis, setAnalysis] = useState(null)
@@ -71,6 +74,18 @@ export default function App() {
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}/api/countries`)
+      .then(r => r.json()).then(setCountrySpecs).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!photoUrl) { setPhotoDimensions(null); return }
+    const img = new window.Image()
+    img.onload = () => setPhotoDimensions({ w: img.naturalWidth, h: img.naturalHeight })
+    img.src = photoUrl
+  }, [photoUrl])
 
   const handleNewFileSelected = () => {
     if (photoUrl) URL.revokeObjectURL(photoUrl)
@@ -207,6 +222,11 @@ export default function App() {
     if (outcome === 'accepted') setInstallPrompt(null)
   }
 
+  const targetSpec = country === 'Custom' ? customSpec : countrySpecs?.[country]
+  const scaleFactor = (photoDimensions && targetSpec?.widthPx && targetSpec?.heightPx)
+    ? Math.max(targetSpec.widthPx / photoDimensions.w, targetSpec.heightPx / photoDimensions.h)
+    : 1
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Install banner */}
@@ -240,7 +260,10 @@ export default function App() {
 
         {/* Upload + Country row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-          <UploadZone key={uploadKey} onPhotoSelect={handlePhotoSelect} onNewFileSelected={handleNewFileSelected} photoUrl={photoUrl} />
+          <div className="flex flex-col gap-4">
+            <UploadZone key={uploadKey} onPhotoSelect={handlePhotoSelect} onNewFileSelected={handleNewFileSelected} photoUrl={photoUrl} />
+            <ScaleWarning scaleFactor={scaleFactor} />
+          </div>
 
           <div className="flex flex-col gap-4">
             <CountrySelector country={country} onChange={handleCountryChange} />
