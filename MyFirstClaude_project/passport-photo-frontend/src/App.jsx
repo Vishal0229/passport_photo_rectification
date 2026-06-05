@@ -285,6 +285,24 @@ export default function App() {
           </div>
         </div>
 
+        {/* Resolution quality warning — always visible before upload */}
+        {targetSpec?.widthPx && targetSpec?.heightPx && (
+          <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+            <div className="text-sm">
+              <p className="font-semibold text-amber-900 mb-1">
+                Upload a photo of at least 400×400 px for best results
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                Photos below 400×400 px will be upscaled to meet passport dimensions, but upscaled images
+                may still be rejected — passport authorities can detect digitally enhanced or AI-corrected photos
+                even when pixel dimensions appear correct.{' '}
+                <span className="font-semibold">Always use a high-resolution original for official submissions.</span>
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-5 flex items-start gap-3">
