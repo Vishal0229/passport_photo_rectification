@@ -238,18 +238,18 @@
     "dpi": 300,
     "backgroundColor": "WHITE",
     "backgroundColorHex": "#FFFFFF",
-    "faceRatioMin": 0.65,
-    "faceRatioMax": 0.75,
-    "description": "33×48 mm photo with plain white background per National Immigration Administration of China",
+    "faceRatioMin": 0.58,
+    "faceRatioMax": 0.69,
+    "description": "33×48 mm photo with plain white background; head height 28–33 mm, head width 15–22 mm, 3–5 mm from top of head to top edge, at least 7 mm from chin to bottom edge",
     "officialLink": "https://us.china-embassy.gov.cn/lsfw/zj/hzlxz/201903/t20190309_5098803.htm",
     "source": "Chinese Embassy in the United States",
     "requirementsBulletPoints": [
-      "Plain white background — no patterns, shadows, or other colours",
-      "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera",
-      "No glasses (prohibited under current Chinese passport photo regulations)",
-      "No head coverings unless worn for established religious practice; entire face must be clearly visible",
-      "Photo must be recent (taken within the last 6 months) and printed in colour",
-      "Face height should occupy 65–75% of the 33×48 mm photo frame with even lighting and no shadows on the face"
+      "Photo size 33×48 mm with plain white background — no patterns, shadows, or other colours",
+      "Head height (chin to top of head) must be 28–33 mm; head width must be 15–22 mm",
+      "3–5 mm gap between the top of the head and the top edge of the photo",
+      "At least 7 mm from the bottom of the chin to the bottom edge of the photo",
+      "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera; no glasses",
+      "No head coverings unless worn for established religious practice; photo taken within the last 6 months"
     ]
   },
   "Brazil": {
