@@ -39,7 +39,7 @@ if ($proc) { Stop-Process -Id $proc -Force }
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/countries` | List all supported country specs |
+| GET | `/api/countries` | List all supported country specs (returns full `CountrySpec` objects including `requirementsBulletPoints`) |
 | POST | `/api/analyze` | Analyze photo compliance |
 | POST | `/api/correct` | Return corrected photo (JPEG bytes) |
 
@@ -58,7 +58,7 @@ Both POST endpoints accept `multipart/form-data` with:
 
 Only the **multiple-people gate** (`faces > 1`) blocks requests — no "no face" gate. Real users upload their own photos; the analysis itself checks face presence as one of its compliance checks.
 
-### Custom / Other country spec
+### "My Country not on list" (Custom) spec
 When `country=Custom`, the frontend sends a `customSpec` JSON field with all `CountrySpec` fields pre-populated (pixel dimensions auto-calculated from mm at 300 DPI). The backend parses it directly and skips the country-spec lookup.
 
 ### Cascade XML files
@@ -76,7 +76,7 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 | `controller/PhotoController.java` | REST endpoints; face-count gate; custom-spec JSON parsing |
 | `service/PhotoAnalysisService.java` | Compliance checks + image correction logic |
 | `service/FaceDetectionService.java` | Two-pass Haar Cascade face counting |
-| `model/CountrySpec.java` | Spec model (widthMm, heightMm, widthPx, heightPx, dpi, backgroundColor, faceRatioMin/Max) |
+| `model/CountrySpec.java` | Spec model (widthMm, heightMm, widthPx, heightPx, dpi, backgroundColor, faceRatioMin/Max, requirementsBulletPoints) |
 | `resources/country-specs.json` | Country spec data |
 | `resources/haarcascade_frontalface_alt2.xml` | Alt2 cascade (bundled) |
 
@@ -87,12 +87,15 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 | `src/components/UploadZone.jsx` | Drag-drop upload; runs frontend face detection; `onNewFileSelected` clears stale state |
 | `src/components/CountrySelector.jsx` | Country dropdown including Custom option |
 | `src/components/CustomSpecForm.jsx` | Form for entering custom passport spec |
+| `src/components/PreUploadRequirementsChecklist.jsx` | Shows country-specific requirements (bullets, description, official link) immediately after country selection, before upload |
 | `src/components/ComplianceChecklist.jsx` | Displays check results + disclaimer + official links |
 | `src/components/PhotoComparison.jsx` | Before/after slider |
 | `src/services/api.js` | Axios calls to backend (supports `customSpec` param) |
 | `src/services/faceDetection.js` | face-api.js TinyFaceDetector wrapper |
 
 ## Supported countries (built-in specs)
+
+15 real countries + "My Country not on list" option = 16 dropdown entries.
 
 | Code | Name | Size |
 |------|------|------|
@@ -103,7 +106,15 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 | Australia | Australia | 413×531 px (35×45 mm) |
 | UAE | United Arab Emirates | 472×709 px (40×60 mm) |
 | Schengen | Schengen / EU | 413×531 px (35×45 mm) |
-| Custom | Custom / Other | User-entered |
+| Germany | Germany | 413×531 px (35×45 mm) |
+| France | France | 413×531 px (35×45 mm) |
+| Japan | Japan | 531×413 px (45×35 mm) |
+| China | China | 390×567 px (33×48 mm) |
+| Brazil | Brazil | 591×827 px (50×70 mm) |
+| NewZealand | New Zealand | 413×531 px (35×45 mm) |
+| Singapore | Singapore | 413×531 px (35×45 mm) |
+| Mexico | Mexico | 413×531 px (35×45 mm) |
+| Custom | My Country not on list | User-entered |
 
 ## Official spec links (in ComplianceChecklist.jsx)
 - US: travel.state.gov passports/requirements/photos
@@ -111,5 +122,5 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 - India: Passport Seva PDF (ctfassets.net)
 - Canada: canada.ca immigration passports/photos
 - Australia: passports.gov.au/help/passport-photos
-- UAE: icp.gov.ae (link still TBD — users can use Custom instead)
+- UAE: icp.gov.ae (link still TBD — users can use "My Country not on list" instead)
 - Schengen: schengenvisainfo.com/photo-requirements/
