@@ -68,10 +68,27 @@ class PhotoAnalysisServiceTest {
     // ─── getCountrySpecs ─────────────────────────────────────────────────────────
 
     @Test
-    void getCountrySpecs_returnsAllSevenCountries() {
+    void getCountrySpecs_returnsAllFifteenCountries() {
         Map<String, CountrySpec> specs = service.getCountrySpecs();
-        assertThat(specs).hasSize(7)
-            .containsKeys("US", "UK", "India", "Canada", "Australia", "UAE", "Schengen");
+        assertThat(specs).hasSize(15)
+            .containsKeys(
+                "US", "UK", "India", "Canada", "Australia", "UAE", "Schengen",
+                "Germany", "France", "Japan", "China", "Brazil", "NewZealand", "Singapore", "Mexico"
+            );
+    }
+
+    @Test
+    void getCountrySpecs_allCountriesHaveRequirementsBulletPoints() {
+        Map<String, CountrySpec> specs = service.getCountrySpecs();
+        for (Map.Entry<String, CountrySpec> entry : specs.entrySet()) {
+            CountrySpec spec = entry.getValue();
+            assertThat(spec.getRequirementsBulletPoints())
+                .as("requirementsBulletPoints for country '%s' should not be null", entry.getKey())
+                .isNotNull();
+            assertThat(spec.getRequirementsBulletPoints())
+                .as("requirementsBulletPoints for country '%s' should not be empty", entry.getKey())
+                .isNotEmpty();
+        }
     }
 
     @Test
