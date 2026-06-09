@@ -5,31 +5,6 @@ const BACKGROUNDS = [
 
 const mm2px = (mm) => Math.round(mm * 300 / 25.4)
 
-/**
- * Form for entering a custom passport photo specification.
- *
- * Shown when the user selects "My Country not on list" in {@link CountrySelector}.
- * Accepts width and height in millimetres and automatically converts them to
- * pixels at 300 DPI using the formula `round(mm * 300 / 25.4)`. Background
- * colour selection also auto-populates the corresponding hex value.
- *
- * A read-only pixel-dimension preview is displayed once both width and height
- * are non-zero.
- *
- * @param {Object}   props
- * @param {Object}   props.spec     - The current spec state object (matches the `CountrySpec` shape).
- * @param {string}   props.spec.name - Country/region label.
- * @param {number}   props.spec.widthMm - Photo width in mm.
- * @param {number}   props.spec.heightMm - Photo height in mm.
- * @param {number}   props.spec.widthPx - Derived photo width in px (auto-calculated).
- * @param {number}   props.spec.heightPx - Derived photo height in px (auto-calculated).
- * @param {string}   props.spec.backgroundColor - `"WHITE"` or `"LIGHT_GREY"`.
- * @param {string}   props.spec.backgroundColorHex - Hex colour string (auto-populated from `backgroundColor`).
- * @param {number}   props.spec.faceRatioMin - Minimum face height ratio (0–1).
- * @param {number}   props.spec.faceRatioMax - Maximum face height ratio (0–1).
- * @param {Function} props.onChange - Called with the updated spec object on any field change.
- * @returns {JSX.Element} The custom spec input form card.
- */
 export default function CustomSpecForm({ spec, onChange }) {
   const set = (field, raw) => {
     const next = { ...spec }
@@ -65,8 +40,9 @@ export default function CustomSpecForm({ spec, onChange }) {
 
       {/* Region name */}
       <div>
-        <label className="text-xs text-gray-600 font-medium block mb-1">Country / Region</label>
+        <label htmlFor="custom-name" className="text-xs text-gray-600 font-medium block mb-1">Country / Region</label>
         <input
+          id="custom-name"
           type="text"
           value={spec.name || ''}
           onChange={(e) => set('name', e.target.value)}
@@ -79,8 +55,9 @@ export default function CustomSpecForm({ spec, onChange }) {
       {/* Dimensions */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-600 font-medium block mb-1">Width (mm)</label>
+          <label htmlFor="custom-widthMm" className="text-xs text-gray-600 font-medium block mb-1">Width (mm)</label>
           <input
+            id="custom-widthMm"
             type="number"
             min="15" max="150"
             value={spec.widthMm || ''}
@@ -90,8 +67,9 @@ export default function CustomSpecForm({ spec, onChange }) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-600 font-medium block mb-1">Height (mm)</label>
+          <label htmlFor="custom-heightMm" className="text-xs text-gray-600 font-medium block mb-1">Height (mm)</label>
           <input
+            id="custom-heightMm"
             type="number"
             min="15" max="200"
             value={spec.heightMm || ''}
@@ -104,8 +82,9 @@ export default function CustomSpecForm({ spec, onChange }) {
 
       {/* Background */}
       <div>
-        <label className="text-xs text-gray-600 font-medium block mb-1">Background</label>
+        <label htmlFor="custom-backgroundColor" className="text-xs text-gray-600 font-medium block mb-1">Background</label>
         <select
+          id="custom-backgroundColor"
           value={spec.backgroundColor || 'WHITE'}
           onChange={(e) => set('backgroundColor', e.target.value)}
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white
@@ -120,8 +99,9 @@ export default function CustomSpecForm({ spec, onChange }) {
       {/* Face ratio */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-600 font-medium block mb-1">Face min % of height</label>
+          <label htmlFor="custom-faceRatioMin" className="text-xs text-gray-600 font-medium block mb-1">Face min % of height</label>
           <input
+            id="custom-faceRatioMin"
             type="number"
             min="20" max="90"
             value={faceMinPct}
@@ -132,8 +112,9 @@ export default function CustomSpecForm({ spec, onChange }) {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-600 font-medium block mb-1">Face max % of height</label>
+          <label htmlFor="custom-faceRatioMax" className="text-xs text-gray-600 font-medium block mb-1">Face max % of height</label>
           <input
+            id="custom-faceRatioMax"
             type="number"
             min="20" max="95"
             value={faceMaxPct}

@@ -97,6 +97,10 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
 
       {/* Drop zone */}
       <div
+        role="region"
+        aria-label="Photo upload area"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open() } }}
         className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
           checking
             ? 'border-blue-300 bg-blue-50 cursor-wait'
@@ -163,8 +167,8 @@ export default function UploadZone({ onPhotoSelect, onNewFileSelected, photoUrl 
 
       {/* Upload error */}
       {faceError && (
-        <div className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
-          <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+        <div role="alert" className="mt-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
+          <span aria-hidden="true" className="text-xl shrink-0 mt-0.5">⚠️</span>
           <div className="flex-1">
             <p className="text-red-700 text-sm font-semibold">{faceError.heading}</p>
             <p className="text-red-600 text-xs mt-0.5 leading-relaxed">{faceError.message}</p>

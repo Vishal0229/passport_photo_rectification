@@ -172,8 +172,8 @@
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.75,
     "description": "35×45 mm photo with plain light grey background per Bundesdruckerei biometric standards",
-    "officialLink": "https://www.bundesdruckerei.de/en/passport-photo",
-    "source": "Bundesdruckerei / German Federal Foreign Office",
+    "officialLink": "https://www.bundesregierung.de/breg-en/service/passport-and-identity-card/biometric-passport-photos-1991618",
+    "source": "Federal Government of Germany (Bundesregierung)",
     "requirementsBulletPoints": [
       "Plain light grey background — no patterns, shadows, or coloured surfaces",
       "Neutral expression with mouth closed; eyes open, looking directly at the camera",
@@ -218,7 +218,7 @@
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.80,
     "description": "45×35 mm landscape photo (width x height) with plain white background per Ministry of Foreign Affairs of Japan",
-    "officialLink": "https://www.mofa.go.jp/mofaj/toko/passport/pass_5.html",
+    "officialLink": "https://www.mofa.go.jp/ca/pss/page22e_000044.html",
     "source": "Ministry of Foreign Affairs of Japan",
     "requirementsBulletPoints": [
       "Plain white background — uniform, no shadows or patterns",
@@ -241,8 +241,8 @@
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.75,
     "description": "33×48 mm photo with plain white background per National Immigration Administration of China",
-    "officialLink": "https://www.nia.gov.cn/n897428/n897433/index.html",
-    "source": "National Immigration Administration of China",
+    "officialLink": "https://www.fmprc.gov.cn/mfa_eng/",
+    "source": "Ministry of Foreign Affairs of China (NIA site is China-only; consult your nearest Chinese consulate)",
     "requirementsBulletPoints": [
       "Plain white background — no patterns, shadows, or other colours",
       "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera",
@@ -264,7 +264,7 @@
     "faceRatioMin": 0.44,
     "faceRatioMax": 0.51,
     "description": "50×70 mm photo with plain white background per Policia Federal do Brasil standards",
-    "officialLink": "https://www.gov.br/pf/pt-br/assuntos/passaporte/requisitos-da-foto",
+    "officialLink": "https://www.gov.br/pf/pt-br/assuntos/passaporte",
     "source": "Policia Federal do Brasil",
     "requirementsBulletPoints": [
       "Plain white background — no shadows, gradients, or patterns",
@@ -287,7 +287,7 @@
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.75,
     "description": "35×45 mm photo with plain white or light grey background per New Zealand Department of Internal Affairs",
-    "officialLink": "https://www.passports.govt.nz/help/passport-photos/",
+    "officialLink": "https://www.passports.govt.nz/passport-photos/",
     "source": "New Zealand Department of Internal Affairs",
     "requirementsBulletPoints": [
       "Plain white or very light grey background — uniform, no patterns or shadows",
@@ -310,7 +310,7 @@
     "faceRatioMin": 0.65,
     "faceRatioMax": 0.75,
     "description": "35×45 mm photo with plain white background per Immigration and Checkpoints Authority (ICA) Singapore",
-    "officialLink": "https://www.ica.gov.sg/docs/default-source/ica/passport/passport-photo-guidelines.pdf",
+    "officialLink": "https://www.ica.gov.sg/",
     "source": "Immigration & Checkpoints Authority (ICA), Singapore",
     "requirementsBulletPoints": [
       "Plain white background — no shadows, patterns, or other colours",

@@ -1,17 +1,3 @@
-/**
- * Side-by-side before/after photo comparison with a download button.
- *
- * Renders the original and corrected photos in equal-width columns with labels.
- * The corrected photo column has a green border to draw attention to the result.
- * The download button triggers a programmatic anchor click to save the corrected
- * image as `passport_photo_<country>.jpg`.
- *
- * @param {Object} props
- * @param {string} props.originalUrl   - Object URL of the original uploaded photo.
- * @param {string} props.correctedUrl  - Object URL of the corrected JPEG returned by the backend.
- * @param {string} props.country       - Country code used to name the downloaded file.
- * @returns {JSX.Element} The before/after comparison card with download button.
- */
 export default function PhotoComparison({ originalUrl, correctedUrl, country, onDownloadSheet, sheetLoading, onDownloadPdf, pdfLoading }) {
   const handleDownload = () => {
     const link = document.createElement('a')
@@ -57,10 +43,11 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
         <div className="flex flex-wrap justify-center gap-3">
           <button
             onClick={handleDownload}
+            aria-label="Download single photo as JPEG"
             className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold
                        py-3 px-8 rounded-xl transition-colors shadow-sm flex items-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -70,6 +57,9 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
           <button
             onClick={onDownloadSheet}
             disabled={sheetLoading}
+            aria-label="Download photo sheet as JPEG"
+            aria-busy={sheetLoading}
+            aria-disabled={sheetLoading}
             className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold
                        py-3 px-8 rounded-xl transition-colors shadow-sm flex items-center gap-2
                        disabled:opacity-40 disabled:cursor-not-allowed"
@@ -77,7 +67,7 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
             {sheetLoading ? (
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M17 17H7a4 4 0 01-4-4V7a4 4 0 014-4h5m5 0v5m0-5l-7 7" />
               </svg>
@@ -88,6 +78,9 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
           <button
             onClick={onDownloadPdf}
             disabled={pdfLoading}
+            aria-label="Download photo sheet as PDF"
+            aria-busy={pdfLoading}
+            aria-disabled={pdfLoading}
             className="bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold
                        py-3 px-8 rounded-xl transition-colors shadow-sm flex items-center gap-2
                        disabled:opacity-40 disabled:cursor-not-allowed"
@@ -95,7 +88,7 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
             {pdfLoading ? (
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>

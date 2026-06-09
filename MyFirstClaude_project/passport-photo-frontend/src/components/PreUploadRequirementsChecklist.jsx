@@ -36,10 +36,10 @@ export default function PreUploadRequirementsChecklist({ spec }) {
       </div>
 
       {/* Bullet points */}
-      <ul className="space-y-1 mb-4">
+      <ul aria-label="Requirements" className="space-y-1 mb-4">
         {spec.requirementsBulletPoints.map((bullet, i) => (
           <li key={i} className="flex items-start gap-2 text-xs text-green-700">
-            <span className="shrink-0 mt-0.5">✓</span>
+            <span aria-hidden="true" className="shrink-0 mt-0.5">✓</span>
             <span>{bullet}</span>
           </li>
         ))}
@@ -58,7 +58,7 @@ export default function PreUploadRequirementsChecklist({ spec }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium text-xs transition-colors"
         >
-          🔗 View official requirements
+          <span aria-hidden="true">🔗</span> View official requirements
         </a>
       )}
     </div>

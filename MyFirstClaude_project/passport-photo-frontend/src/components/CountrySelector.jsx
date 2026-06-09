@@ -36,9 +36,11 @@ export default function CountrySelector({ country, onChange }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6">
-      <h2 className="text-base font-semibold text-gray-700 mb-4">Select Country</h2>
+      <h2 id="country-label" className="text-base font-semibold text-gray-700 mb-4">Select Country</h2>
 
       <select
+        id="country-select"
+        aria-labelledby="country-label"
         value={country}
         onChange={(e) => onChange(e.target.value)}
         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-700 bg-gray-50

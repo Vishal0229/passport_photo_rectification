@@ -4,12 +4,12 @@ export default function ScaleWarning({ scaleFactor }) {
   const isRed = scaleFactor >= 2.5
 
   return (
-    <div className={`rounded-xl px-4 py-3 flex items-start gap-3 border ${
+    <div role="alert" className={`rounded-xl px-4 py-3 flex items-start gap-3 border ${
       isRed
         ? 'bg-red-50 border-red-200'
         : 'bg-amber-50 border-amber-200'
     }`}>
-      <span className="text-lg shrink-0 mt-0.5">{isRed ? '🔴' : '⚠️'}</span>
+      <span aria-hidden="true" className="text-lg shrink-0 mt-0.5">{isRed ? '🔴' : '⚠️'}</span>
       <div className="min-w-0">
         <p className={`font-semibold text-sm ${isRed ? 'text-red-800' : 'text-amber-800'}`}>
           {isRed ? 'Low resolution — significant quality loss expected' : 'Low resolution — some quality loss possible'}

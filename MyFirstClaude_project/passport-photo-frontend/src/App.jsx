@@ -23,34 +23,12 @@ const DEFAULT_CUSTOM_SPEC = {
   description: '',
 }
 
-/**
- * Inline animated spinner used inside loading buttons.
- *
- * @returns {JSX.Element} A small circular CSS animation element.
- */
 function Spinner() {
   return (
     <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
   )
 }
 
-/**
- * Root application component for the Passport Photo Corrector.
- *
- * Orchestrates the full analysis and correction flow:
- * 1. User uploads a photo via {@link UploadZone} (frontend face detection runs here).
- * 2. User selects a country via {@link CountrySelector}, or fills in a custom spec
- *    via {@link CustomSpecForm} when "My Country not on list" is chosen.
- * 3. Clicking "Analyze Photo" calls `POST /api/analyze` and displays results in
- *    {@link ComplianceChecklist}.
- * 4. Clicking "Correct Photo" calls `POST /api/correct` and displays before/after
- *    images in {@link PhotoComparison}.
- *
- * Also listens for the browser's `beforeinstallprompt` event and shows an
- * "Add to Home Screen" banner when the PWA install criteria are met.
- *
- * @returns {JSX.Element} The full single-page application layout.
- */
 export default function App() {
   const [photo, setPhoto] = useState(null)
   const [photoUrl, setPhotoUrl] = useState(null)
@@ -232,12 +210,16 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Install banner */}
       {installPrompt && (
-        <div className="bg-blue-600 text-white text-sm text-center py-2 px-4">
+        <div role="alert" className="bg-blue-600 text-white text-sm text-center py-2 px-4">
           Install this app for quick access on your device!{' '}
           <button onClick={handleInstall} className="underline font-semibold ml-1">
             Add to Home Screen
           </button>
-          <button onClick={() => setInstallPrompt(null)} className="ml-4 opacity-60 hover:opacity-100">✕</button>
+          <button
+            onClick={() => setInstallPrompt(null)}
+            aria-label="Dismiss install prompt"
+            className="ml-4 opacity-60 hover:opacity-100"
+          >✕</button>
         </div>
       )}
 
@@ -245,7 +227,7 @@ export default function App() {
       <header className="bg-blue-700 text-white py-5 shadow-lg">
         <div className="container mx-auto px-4 max-w-4xl flex items-center gap-4">
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-xl shrink-0">
-            🛂
+            <span aria-hidden="true">🛂</span>
           </div>
           <div>
             <h1 className="text-xl font-bold leading-tight">Passport Photo Corrector</h1>
@@ -259,41 +241,48 @@ export default function App() {
       {/* Main */}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
 
-        {/* Upload + Country row */}
+        {/* TOP GRID — Country selection */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+          <CountrySelector country={country} onChange={handleCountryChange} />
+          {country === 'Custom'
+            ? <CustomSpecForm spec={customSpec} onChange={setCustomSpec} />
+            : countrySpecs?.[country]
+            ? <PreUploadRequirementsChecklist spec={countrySpecs[country]} />
+            : <div />
+          }
+        </div>
+
+        {/* BOTTOM GRID — Upload + Analyze */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           <div className="flex flex-col gap-4">
-            <UploadZone key={uploadKey} onPhotoSelect={handlePhotoSelect} onNewFileSelected={handleNewFileSelected} photoUrl={photoUrl} />
+            <UploadZone
+              key={uploadKey}
+              onPhotoSelect={handlePhotoSelect}
+              onNewFileSelected={handleNewFileSelected}
+              photoUrl={photoUrl}
+            />
             <ScaleWarning scaleFactor={scaleFactor} />
           </div>
-
-          <div className="flex flex-col gap-4">
-            <CountrySelector country={country} onChange={handleCountryChange} />
-
-            {country !== 'Custom' && countrySpecs?.[country] && (
-              <PreUploadRequirementsChecklist spec={countrySpecs[country]} />
-            )}
-
-            {country === 'Custom' && (
-              <CustomSpecForm spec={customSpec} onChange={setCustomSpec} />
-            )}
-
+          <div className="flex flex-col justify-center">
             <button
               onClick={handleAnalyze}
               disabled={!photo || loading || (country === 'Custom' && (!customSpec.widthMm || !customSpec.heightMm))}
+              aria-label="Analyze photo"
+              aria-busy={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white
                          font-semibold py-3.5 rounded-xl transition-colors
                          disabled:opacity-40 disabled:cursor-not-allowed shadow-sm
                          flex items-center justify-center gap-2"
             >
-              {loading ? <><Spinner /> Analyzing…</> : '🔍 Analyze Photo'}
+              {loading ? <><Spinner /> Analyzing…</> : <><span aria-hidden="true">🔍</span> Analyze Photo</>}
             </button>
           </div>
         </div>
 
         {/* Resolution quality warning — always visible before upload */}
-        {targetSpec?.widthPx && targetSpec?.heightPx && (
+        {!!targetSpec?.widthPx && !!targetSpec?.heightPx && (
           <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
-            <span className="text-xl shrink-0 mt-0.5">⚠️</span>
+            <span aria-hidden="true" className="text-xl shrink-0 mt-0.5">⚠️</span>
             <div className="text-sm">
               <p className="font-semibold text-amber-900 mb-1">
                 Upload a photo of at least 400×400 px for best results
@@ -310,8 +299,12 @@ export default function App() {
 
         {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-5 flex items-start gap-3">
-            <span className="text-lg shrink-0">⚠️</span>
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-xl mb-5 flex items-start gap-3"
+          >
+            <span aria-hidden="true" className="text-lg shrink-0">⚠️</span>
             <p className="text-sm">{error}</p>
           </div>
         )}
@@ -325,11 +318,13 @@ export default function App() {
               <button
                 onClick={handleCorrect}
                 disabled={correcting}
+                aria-label="Correct photo"
+                aria-busy={correcting}
                 className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white
                            font-semibold py-3 px-10 rounded-xl transition-colors shadow-sm
                            flex items-center gap-2 disabled:opacity-40"
               >
-                {correcting ? <><Spinner /> Correcting…</> : '🔧 Correct Photo'}
+                {correcting ? <><Spinner /> Correcting…</> : <><span aria-hidden="true">🔧</span> Correct Photo</>}
               </button>
             </div>
           </>
@@ -353,7 +348,7 @@ export default function App() {
           <div className="flex justify-center mt-8">
             <button
               onClick={handleReset}
-              className="text-gray-400 hover:text-gray-600 text-sm underline transition-colors"
+              className="text-gray-400 hover:text-gray-600 text-sm underline transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
             >
               Start over with a new photo
             </button>
