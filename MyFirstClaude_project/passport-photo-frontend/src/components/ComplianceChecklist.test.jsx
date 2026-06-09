@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+﻿import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import ComplianceChecklist from './ComplianceChecklist'
 
@@ -10,6 +10,7 @@ const usSpec = {
   backgroundColorHex: '#FFFFFF',
   faceRatioMin: 0.50, faceRatioMax: 0.69,
   description: '2×2 inch photo with white background',
+  officialLink: 'https://travel.state.gov/content/travel/en/passports/requirements/photos.html',
 }
 
 function makeAnalysis(overrides = {}) {
@@ -84,20 +85,20 @@ describe('ComplianceChecklist', () => {
 
   it('shows "Check official requirements" link for US', () => {
     render(<ComplianceChecklist analysis={makeAnalysis()} />)
-    const link = screen.getByText('Check official requirements →')
+    const link = screen.getByRole('link', { name: /official requirements/i })
     expect(link).toBeInTheDocument()
     expect(link).toHaveAttribute('href', expect.stringContaining('travel.state.gov'))
     expect(link).toHaveAttribute('target', '_blank')
   })
 
   it('does not show official link for unknown/custom country', () => {
-    render(<ComplianceChecklist analysis={makeAnalysis({ country: 'Custom' })} />)
-    expect(screen.queryByText('Check official requirements →')).not.toBeInTheDocument()
+    render(<ComplianceChecklist analysis={makeAnalysis({ country: 'Custom', spec: { ...usSpec, officialLink: null } })} />)
+    expect(screen.queryByRole('link', { name: /official requirements/i })).not.toBeInTheDocument()
   })
 
   it('shows "ready to correct and download" banner when allPassed is true', () => {
     render(<ComplianceChecklist analysis={makeAnalysis()} />)
-    expect(screen.getByText(/ready to correct and download/i)).toBeInTheDocument()
+    expect(screen.getByText(/your photo meets all official requirements/i)).toBeInTheDocument()
   })
 
   it('shows "Some issues found" banner when allPassed is false', () => {

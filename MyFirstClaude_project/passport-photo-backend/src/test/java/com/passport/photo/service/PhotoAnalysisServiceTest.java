@@ -1,4 +1,4 @@
-package com.passport.photo.service;
+﻿package com.passport.photo.service;
 
 import com.passport.photo.model.AnalysisResult;
 import com.passport.photo.model.ComplianceCheck;
@@ -163,7 +163,7 @@ class PhotoAnalysisServiceTest {
         AnalysisResult result = service.analyzePhoto(toBytes(whiteImage(100, 100)), "US");
         ComplianceCheck check = result.getChecks().get(0);
         assertThat(check.isPassed()).isFalse();
-        assertThat(check.getMessage()).contains("smaller than required");
+        assertThat(check.getMessage()).contains("too small");
     }
 
     // ─── check[1]: Aspect Ratio ──────────────────────────────────────────────────

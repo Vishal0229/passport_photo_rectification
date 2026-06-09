@@ -1,4 +1,4 @@
-{
+﻿{
   "US": {
     "name": "United States",
     "widthMm": 51,
@@ -49,8 +49,8 @@
     "name": "India",
     "widthMm": 51,
     "heightMm": 51,
-    "widthPx": 600,
-    "heightPx": 600,
+    "widthPx": 602,
+    "heightPx": 602,
     "dpi": 300,
     "backgroundColor": "WHITE",
     "backgroundColorHex": "#FFFFFF",

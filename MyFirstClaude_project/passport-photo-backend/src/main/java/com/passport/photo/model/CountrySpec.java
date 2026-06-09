@@ -1,4 +1,4 @@
-package com.passport.photo.model;
+﻿package com.passport.photo.model;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import java.util.List;
  *
  * <p>Instances are loaded at startup from {@code country-specs.json} on the
  * classpath, or constructed at runtime from a JSON string supplied by the
- * frontend when the user selects the Custom / Other option.</p>
+ * frontend when the user selects the "My Country not on list" option.</p>
  *
  * @version 1.0
  */
