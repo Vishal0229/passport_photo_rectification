@@ -4,6 +4,7 @@ import CountrySelector from './components/CountrySelector'
 import CustomSpecForm from './components/CustomSpecForm'
 import ScaleWarning from './components/ScaleWarning'
 import ComplianceChecklist from './components/ComplianceChecklist'
+import PreUploadRequirementsChecklist from './components/PreUploadRequirementsChecklist'
 import PhotoComparison from './components/PhotoComparison'
 import { analyzePhoto, correctPhoto, downloadPhotoSheet, downloadPhotoPdf } from './services/api'
 import { logger } from './services/logger'
@@ -39,7 +40,7 @@ function Spinner() {
  * Orchestrates the full analysis and correction flow:
  * 1. User uploads a photo via {@link UploadZone} (frontend face detection runs here).
  * 2. User selects a country via {@link CountrySelector}, or fills in a custom spec
- *    via {@link CustomSpecForm} when "Custom / Other" is chosen.
+ *    via {@link CustomSpecForm} when "My Country not on list" is chosen.
  * 3. Clicking "Analyze Photo" calls `POST /api/analyze` and displays results in
  *    {@link ComplianceChecklist}.
  * 4. Clicking "Correct Photo" calls `POST /api/correct` and displays before/after
@@ -249,7 +250,7 @@ export default function App() {
           <div>
             <h1 className="text-xl font-bold leading-tight">Passport Photo Corrector</h1>
             <p className="text-blue-200 text-xs mt-0.5">
-              Verify &amp; auto-correct photos to meet US, UK, India, Canada, Australia, UAE, Schengen standards
+              Verify &amp; auto-correct photos to meet official passport photo standards for 15+ countries
             </p>
           </div>
         </div>
@@ -267,6 +268,10 @@ export default function App() {
 
           <div className="flex flex-col gap-4">
             <CountrySelector country={country} onChange={handleCountryChange} />
+
+            {country !== 'Custom' && countrySpecs?.[country] && (
+              <PreUploadRequirementsChecklist spec={countrySpecs[country]} />
+            )}
 
             {country === 'Custom' && (
               <CustomSpecForm spec={customSpec} onChange={setCustomSpec} />

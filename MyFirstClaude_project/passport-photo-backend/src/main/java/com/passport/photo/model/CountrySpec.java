@@ -1,5 +1,7 @@
 package com.passport.photo.model;
 
+import java.util.List;
+
 /**
  * Specification for a country's official passport photo requirements.
  *
@@ -36,6 +38,8 @@ public class CountrySpec {
     private String officialLink;
     /** Source or authority that defined these requirements (e.g. "passport.gov"). */
     private String source;
+    /** Plain-language bullet points summarising the key requirements for this country. */
+    private List<String> requirementsBulletPoints;
 
     public CountrySpec() {}
 
@@ -77,4 +81,7 @@ public class CountrySpec {
 
     public String getSource() { return source; }
     public void setSource(String source) { this.source = source; }
+
+    public List<String> getRequirementsBulletPoints() { return requirementsBulletPoints; }
+    public void setRequirementsBulletPoints(List<String> requirementsBulletPoints) { this.requirementsBulletPoints = requirementsBulletPoints; }
 }

@@ -1,19 +1,28 @@
 const COUNTRIES = [
-  { code: 'US',       name: 'United States',        flag: '🇺🇸', spec: '2×2 in · white bg',        minPx: '600×600 px' },
-  { code: 'UK',       name: 'United Kingdom',        flag: '🇬🇧', spec: '35×45 mm · light grey bg', minPx: '413×531 px' },
-  { code: 'India',    name: 'India',                 flag: '🇮🇳', spec: '51×51 mm · white bg',       minPx: '602×602 px' },
-  { code: 'Canada',   name: 'Canada',                flag: '🇨🇦', spec: '50×70 mm · white bg',       minPx: '591×827 px' },
-  { code: 'Australia',name: 'Australia',             flag: '🇦🇺', spec: '35×45 mm · white bg',       minPx: '413×531 px' },
-  { code: 'UAE',      name: 'United Arab Emirates',  flag: '🇦🇪', spec: '40×60 mm · white bg',       minPx: '472×709 px' },
-  { code: 'Schengen', name: 'Schengen (EU)',          flag: '🇪🇺', spec: '35×45 mm · light grey bg', minPx: '413×531 px' },
-  { code: 'Custom',   name: 'Custom / Other',         flag: '🌍', spec: 'Enter your own specifications' },
+  { code: 'US',         name: 'United States',        flag: '🇺🇸', spec: '2×2 in · white bg',          minPx: '600×600 px' },
+  { code: 'UK',         name: 'United Kingdom',        flag: '🇬🇧', spec: '35×45 mm · light grey bg',   minPx: '413×531 px' },
+  { code: 'India',      name: 'India',                 flag: '🇮🇳', spec: '51×51 mm · white bg',         minPx: '602×602 px' },
+  { code: 'Canada',     name: 'Canada',                flag: '🇨🇦', spec: '50×70 mm · white bg',         minPx: '591×827 px' },
+  { code: 'Australia',  name: 'Australia',             flag: '🇦🇺', spec: '35×45 mm · white bg',         minPx: '413×531 px' },
+  { code: 'UAE',        name: 'United Arab Emirates',  flag: '🇦🇪', spec: '40×60 mm · white bg',         minPx: '472×709 px' },
+  { code: 'Schengen',   name: 'Schengen (EU)',          flag: '🇪🇺', spec: '35×45 mm · light grey bg',   minPx: '413×531 px' },
+  { code: 'Germany',    name: 'Germany',               flag: '🇩🇪', spec: '35×45 mm · light grey bg',   minPx: '413×531 px' },
+  { code: 'France',     name: 'France',                flag: '🇫🇷', spec: '35×45 mm · white bg',         minPx: '413×531 px' },
+  { code: 'Japan',      name: 'Japan',                 flag: '🇯🇵', spec: '45×35 mm · white bg',         minPx: '531×413 px' },
+  { code: 'China',      name: 'China',                 flag: '🇨🇳', spec: '33×48 mm · white bg',         minPx: '390×567 px' },
+  { code: 'Brazil',     name: 'Brazil',                flag: '🇧🇷', spec: '50×70 mm · white bg',         minPx: '591×827 px' },
+  { code: 'NewZealand', name: 'New Zealand',           flag: '🇳🇿', spec: '35×45 mm · white bg',         minPx: '413×531 px' },
+  { code: 'Singapore',  name: 'Singapore',             flag: '🇸🇬', spec: '35×45 mm · white bg',         minPx: '413×531 px' },
+  { code: 'Mexico',     name: 'Mexico',                flag: '🇲🇽', spec: '35×45 mm · white bg',         minPx: '413×531 px' },
+  { code: 'Custom',     name: 'My Country not on list', flag: '🌍', spec: 'Enter your own specifications' },
 ]
 
 /**
  * Country selection dropdown with a compliance summary card.
  *
  * Renders all built-in country options (US, UK, India, Canada, Australia, UAE,
- * Schengen) plus "Custom / Other". Selecting an option fires `onChange` with the
+ * Schengen, Germany, France, Japan, China, Brazil, New Zealand, Singapore, Mexico)
+ * plus "My Country not on list". Selecting an option fires `onChange` with the
  * new country code string. Below the dropdown, a card shows the selected country's
  * flag, name, and compliance requirements along with official government links.
  *

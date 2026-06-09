@@ -8,7 +8,7 @@ const mm2px = (mm) => Math.round(mm * 300 / 25.4)
 /**
  * Form for entering a custom passport photo specification.
  *
- * Shown when the user selects "Custom / Other" in {@link CountrySelector}.
+ * Shown when the user selects "My Country not on list" in {@link CountrySelector}.
  * Accepts width and height in millimetres and automatically converts them to
  * pixels at 300 DPI using the formula `round(mm * 300 / 25.4)`. Background
  * colour selection also auto-populates the corresponding hex value.
@@ -52,7 +52,7 @@ export default function CustomSpecForm({ spec, onChange }) {
     }
 
     next.dpi = 300
-    next.description = `${next.name || 'Custom'}: ${next.widthMm}×${next.heightMm} mm, ${(next.backgroundColor || 'WHITE').replace('_', ' ').toLowerCase()} background`
+    next.description = `${next.name || 'My Country not on list'}: ${next.widthMm}×${next.heightMm} mm, ${(next.backgroundColor || 'WHITE').replace('_', ' ').toLowerCase()} background`
     onChange(next)
   }
 

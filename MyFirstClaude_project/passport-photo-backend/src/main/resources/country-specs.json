@@ -12,7 +12,15 @@
     "faceRatioMax": 0.69,
     "description": "2×2 inch (51×51 mm) square photo with white or off-white background",
     "officialLink": "https://travel.state.gov/content/travel/en/passports/requirements/photos.html",
-    "source": "U.S. Department of State"
+    "source": "U.S. Department of State",
+    "requirementsBulletPoints": [
+      "Plain white or off-white background — no patterns, textures, or shadows",
+      "Neutral facial expression with mouth closed; eyes open and looking directly at the camera",
+      "No eyeglasses (required since November 2016); no tinted lenses",
+      "No hats or head coverings unless worn daily for religious reasons, with a signed statement",
+      "Photo must have been taken within the last 6 months",
+      "Face must occupy 50–69% of the photo height in the 2×2 inch frame"
+    ]
   },
   "UK": {
     "name": "United Kingdom",
@@ -27,7 +35,15 @@
     "faceRatioMax": 0.75,
     "description": "35×45 mm photo with light grey or cream plain background",
     "officialLink": "https://www.gov.uk/photos-for-passports",
-    "source": "UK Government"
+    "source": "UK Government",
+    "requirementsBulletPoints": [
+      "Plain light grey or cream background — no patterns or shadows behind the head",
+      "Neutral expression with mouth closed; both eyes open and clearly visible",
+      "No tinted glasses; plain prescription glasses only if essential, with no reflections or tinted lenses",
+      "Head coverings only for religious or medical reasons and must not obscure facial features",
+      "Photo taken within the last month and printed in colour",
+      "Face must fill 65–75% of the frame height from chin to crown"
+    ]
   },
   "India": {
     "name": "India",
@@ -42,7 +58,15 @@
     "faceRatioMax": 0.80,
     "description": "51×51 mm (2×2 inch) square photo with plain white background",
     "officialLink": "https://assets.ctfassets.net/xxg4p8gt3sg6/65N7mZz0hfj57DM1VlnLA2/284bfc9bd711eda8a8564dad5019cc70/PASSPORT_SEVA_PHOTO_UPLOAD_INSTUCTIONS.pdf",
-    "source": "Passport Seva, Government of India"
+    "source": "Passport Seva, Government of India",
+    "requirementsBulletPoints": [
+      "Plain white background — no patterns, designs, or shadows",
+      "Neutral expression; mouth closed; looking directly at the camera",
+      "No spectacles — glasses of any type are not permitted as of recent guidelines",
+      "No head coverings unless worn for religious reasons; full face must remain clearly visible",
+      "Photo must be recent, taken within the last 6 months",
+      "Face and forehead must be clearly visible occupying 70–80% of the frame height"
+    ]
   },
   "Canada": {
     "name": "Canada",
@@ -57,7 +81,15 @@
     "faceRatioMax": 0.51,
     "description": "50×70 mm photo with plain white background",
     "officialLink": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html",
-    "source": "Immigration, Refugees and Citizenship Canada"
+    "source": "Immigration, Refugees and Citizenship Canada",
+    "requirementsBulletPoints": [
+      "Plain white or off-white background with no shadows, objects, or patterns",
+      "Neutral expression with mouth closed; eyes open, clearly visible, and looking directly at the camera",
+      "No glasses of any kind (required since February 2022)",
+      "No head coverings unless worn for religious reasons; a signed declaration is required",
+      "Photo must have been taken within the last 6 months and be printed in colour",
+      "Head (from chin to crown) must measure 31–36 mm and be centred in the 50×70 mm frame"
+    ]
   },
   "Australia": {
     "name": "Australia",
@@ -72,7 +104,15 @@
     "faceRatioMax": 0.80,
     "description": "35×45 mm photo with plain white or off-white background",
     "officialLink": "https://www.passports.gov.au/help/passport-photos",
-    "source": "Australian Passport Office"
+    "source": "Australian Passport Office",
+    "requirementsBulletPoints": [
+      "Plain white or light grey background — no shadows, patterns, or objects",
+      "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera",
+      "No sunglasses; clear prescription glasses permitted only if no reflections or tinting obscure the eyes",
+      "No hats or head coverings except for religious or medical reasons; full face must be unobscured",
+      "Photo must be taken within the last 6 months and printed in natural colour",
+      "Head height (chin to crown) should occupy 71–80% of the photo height"
+    ]
   },
   "UAE": {
     "name": "United Arab Emirates",
@@ -87,7 +127,15 @@
     "faceRatioMax": 0.80,
     "description": "40×60 mm photo with plain white background",
     "officialLink": "https://www.icp.gov.ae/en/page/photorequirements",
-    "source": "General Directorate of Residency and Foreigners Affairs"
+    "source": "General Directorate of Residency and Foreigners Affairs",
+    "requirementsBulletPoints": [
+      "Plain white background — no shadows, gradients, or patterns",
+      "Neutral expression with mouth closed; both eyes open and clearly looking at the camera",
+      "No sunglasses or tinted lenses; clear glasses may be accepted if no glare obscures the eyes",
+      "Traditional headdress (e.g. hijab, kandura) is acceptable provided the face is fully visible from forehead to chin",
+      "Photo must be taken within the last 6 months",
+      "Face should occupy 70–80% of the photo height; no shadows on face or background"
+    ]
   },
   "Schengen": {
     "name": "Schengen (EU)",
@@ -102,7 +150,198 @@
     "faceRatioMax": 0.80,
     "description": "35×45 mm photo with plain light grey background (ICAO standard)",
     "officialLink": "https://www.schengenvisainfo.com/photo-requirements/",
-    "source": "ICAO / Schengen Visa Info"
+    "source": "ICAO / Schengen Visa Info",
+    "requirementsBulletPoints": [
+      "Plain light grey background — uniform colour, no patterns, shadows, or objects",
+      "Neutral expression with mouth closed; eyes open and looking directly at the camera",
+      "No glasses of any kind (ICAO Doc 9303 standard, adopted by Schengen countries)",
+      "No head coverings unless worn for established religious practice; face must be fully visible",
+      "Photo taken within the last 6 months and printed in colour at 300 DPI minimum",
+      "Face height (eyes to chin) must occupy at least 70% of the total photo height per ICAO biometric standards"
+    ]
+  },
+  "Germany": {
+    "name": "Germany",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "LIGHT_GREY",
+    "backgroundColorHex": "#F0F0F0",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with plain light grey background per Bundesdruckerei biometric standards",
+    "officialLink": "https://www.bundesdruckerei.de/en/passport-photo",
+    "source": "Bundesdruckerei / German Federal Foreign Office",
+    "requirementsBulletPoints": [
+      "Plain light grey background — no patterns, shadows, or coloured surfaces",
+      "Neutral expression with mouth closed; eyes open, looking directly at the camera",
+      "No glasses — prohibited since 2017 under German biometric passport rules",
+      "No hats or head coverings except for documented religious or medical reasons; full face must be visible",
+      "Photo must be recent (taken within the last 6 months) and printed in colour",
+      "Face must occupy 65–75% of the frame height; head must be centred with no tilt"
+    ]
+  },
+  "France": {
+    "name": "France",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with plain white background per ANTS/service-public.fr standards",
+    "officialLink": "https://www.service-public.fr/particuliers/vosdroits/F10619",
+    "source": "Agence Nationale des Titres Securises (ANTS)",
+    "requirementsBulletPoints": [
+      "Plain white or very light grey background — no shadows, patterns, or objects",
+      "Neutral expression with mouth closed; both eyes open, clearly visible, and looking at the camera",
+      "No glasses of any kind (prohibited since biometric rules took effect)",
+      "No head coverings except for religious reasons with a signed statement; full face clearly visible",
+      "Photo taken within the last 6 months by a professional photographer or approved booth",
+      "Face must be centred and occupy 65–75% of the photo height; no hair covering the eyes"
+    ]
+  },
+  "Japan": {
+    "name": "Japan",
+    "widthMm": 45,
+    "heightMm": 35,
+    "widthPx": 531,
+    "heightPx": 413,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.80,
+    "description": "45×35 mm landscape photo (width x height) with plain white background per Ministry of Foreign Affairs of Japan",
+    "officialLink": "https://www.mofa.go.jp/mofaj/toko/passport/pass_5.html",
+    "source": "Ministry of Foreign Affairs of Japan",
+    "requirementsBulletPoints": [
+      "Plain white background — uniform, no shadows or patterns",
+      "Neutral expression with mouth closed; both eyes open and looking directly at the camera",
+      "No sunglasses or tinted lenses; clear prescription glasses may be accepted without glare",
+      "No hats, caps, or head coverings except for religious or medical reasons",
+      "Photo taken within the last 6 months and printed in natural colour",
+      "Face (from top of head to chin) must occupy 65–80% of the photo height in the 45x35 mm landscape frame"
+    ]
+  },
+  "China": {
+    "name": "China",
+    "widthMm": 33,
+    "heightMm": 48,
+    "widthPx": 390,
+    "heightPx": 567,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "33×48 mm photo with plain white background per National Immigration Administration of China",
+    "officialLink": "https://www.nia.gov.cn/n897428/n897433/index.html",
+    "source": "National Immigration Administration of China",
+    "requirementsBulletPoints": [
+      "Plain white background — no patterns, shadows, or other colours",
+      "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera",
+      "No glasses (prohibited under current Chinese passport photo regulations)",
+      "No head coverings unless worn for established religious practice; entire face must be clearly visible",
+      "Photo must be recent (taken within the last 6 months) and printed in colour",
+      "Face height should occupy 65–75% of the 33×48 mm photo frame with even lighting and no shadows on the face"
+    ]
+  },
+  "Brazil": {
+    "name": "Brazil",
+    "widthMm": 50,
+    "heightMm": 70,
+    "widthPx": 591,
+    "heightPx": 827,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.44,
+    "faceRatioMax": 0.51,
+    "description": "50×70 mm photo with plain white background per Policia Federal do Brasil standards",
+    "officialLink": "https://www.gov.br/pf/pt-br/assuntos/passaporte/requisitos-da-foto",
+    "source": "Policia Federal do Brasil",
+    "requirementsBulletPoints": [
+      "Plain white background — no shadows, gradients, or patterns",
+      "Neutral expression with mouth closed; both eyes open and looking directly at the camera",
+      "No sunglasses or tinted glasses; clear prescription glasses must have no tint or reflective glare",
+      "No hats or head coverings except for religious reasons; full face clearly visible from chin to forehead",
+      "Photo taken within the last 6 months and printed in colour on glossy paper",
+      "Head (chin to crown) must be centred in the 50×70 mm frame with proportions matching biometric standards"
+    ]
+  },
+  "NewZealand": {
+    "name": "New Zealand",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with plain white or light grey background per New Zealand Department of Internal Affairs",
+    "officialLink": "https://www.passports.govt.nz/help/passport-photos/",
+    "source": "New Zealand Department of Internal Affairs",
+    "requirementsBulletPoints": [
+      "Plain white or very light grey background — uniform, no patterns or shadows",
+      "Neutral expression with mouth closed; both eyes open and looking directly at the camera",
+      "No sunglasses or tinted glasses; clear prescription glasses must have no reflections or tinting",
+      "No hats or head coverings unless worn for religious or medical reasons; full face must be clearly visible",
+      "Photo taken within the last 6 months and printed in natural colour",
+      "Face should occupy 65–75% of the photo height; head must be upright and centred in the frame"
+    ]
+  },
+  "Singapore": {
+    "name": "Singapore",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with plain white background per Immigration and Checkpoints Authority (ICA) Singapore",
+    "officialLink": "https://www.ica.gov.sg/docs/default-source/ica/passport/passport-photo-guidelines.pdf",
+    "source": "Immigration & Checkpoints Authority (ICA), Singapore",
+    "requirementsBulletPoints": [
+      "Plain white background — no shadows, patterns, or other colours",
+      "Neutral expression with mouth closed; both eyes fully open and looking directly at the camera",
+      "No sunglasses or tinted lenses; clear glasses are permitted if no reflections or tinting obscure the eyes",
+      "Head coverings only for religious reasons; full face from forehead to chin must be clearly visible",
+      "Photo taken within the last 3 months and printed in colour",
+      "Face must occupy 65–75% of the frame height; no hair or accessories covering the eyes or face outline"
+    ]
+  },
+  "Mexico": {
+    "name": "Mexico",
+    "widthMm": 35,
+    "heightMm": 45,
+    "widthPx": 413,
+    "heightPx": 531,
+    "dpi": 300,
+    "backgroundColor": "WHITE",
+    "backgroundColorHex": "#FFFFFF",
+    "faceRatioMin": 0.65,
+    "faceRatioMax": 0.75,
+    "description": "35×45 mm photo with plain white background per Secretaria de Relaciones Exteriores (SRE) Mexico",
+    "officialLink": "https://www.gob.mx/sre/documentos/tramite-de-pasaporte-para-mexicanos",
+    "source": "Secretaria de Relaciones Exteriores (SRE), Mexico",
+    "requirementsBulletPoints": [
+      "Plain white background — no shadows, patterns, or coloured surfaces",
+      "Neutral expression with mouth closed; both eyes open and looking directly at the camera",
+      "No sunglasses or tinted lenses; clear prescription glasses may be worn if there is no glare",
+      "No hats or head coverings except for religious or medical reasons; full face must be visible",
+      "Photo taken within the last 6 months and printed in colour",
+      "Face must occupy 65–75% of the frame height; head should be centred and upright with no tilt"
+    ]
   }
 }
-
