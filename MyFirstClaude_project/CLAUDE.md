@@ -52,9 +52,12 @@ Both POST endpoints accept `multipart/form-data` with:
 
 ### Face detection — two layers
 1. **Frontend**: `@vladmandic/face-api` TinyFaceDetector (neural network, browser-side). scoreThreshold=0.4, inputSize=416. Runs before upload reaches the server.
-2. **Backend**: OpenCV Haar Cascade — two-pass:
+2. **Backend**: OpenCV Haar Cascade — two-pass (shared by both `countFaces` and `detectPrimaryFace`):
    - Pass 1: `haarcascade_frontalface_default.xml`, minNeighbors=4, minSize=30×30, no equalizeHist (equalizeHist caused false negatives on uniform backgrounds)
-   - Pass 2 (if count==0): `haarcascade_frontalface_alt2.xml` + 2× upscale + equalizeHist, minNeighbors=2
+   - Pass 2 (if count==0 / no face found): `haarcascade_frontalface_alt2.xml` + 2× upscale + equalizeHist, minNeighbors=2
+
+   `countFaces` — returns total number of detected faces (used by the multiple-people gate).
+   `detectPrimaryFace` — returns `int[]{x, y, w, h}` of the largest face in original pixel coordinates. Pass 2 divides coordinates by 2 before returning to undo the upscale.
 
 Only the **multiple-people gate** (`faces > 1`) blocks requests — no "no face" gate. Real users upload their own photos; the analysis itself checks face presence as one of its compliance checks.
 
@@ -66,7 +69,10 @@ When `country=Custom`, the frontend sends a `customSpec` JSON field with all `Co
 - `haarcascade_frontalface_alt2.xml` — bundled directly in `src/main/resources/` (the Maven download plugin had a Windows cache-index permission error for a second download execution).
 
 ### Image correction
-Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then centre-crops onto a `BufferedImage` canvas filled with the spec's background colour. Slight top-bias vertical offset to keep face in frame.
+Two code paths depending on whether a face is detected:
+
+- **Face-aware crop (primary path)**: When `detectPrimaryFace` finds a face, the crop window is sized so the face occupies `faceRatioMax` of the output height, preserving the target aspect ratio. ~4 mm of head-room is added above the top of the detected face. The window is clamped to source bounds before cropping.
+- **Fallback path**: When no face is detected, or the face-aware crop window would exceed source bounds, falls back to cover-mode: Thumbnailator scales to fill both dimensions, then a centre-crop with a slight top-bias vertical offset is placed onto a `BufferedImage` canvas filled with the spec's background colour.
 
 ## Key files
 
@@ -74,8 +80,8 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 | File | Purpose |
 |------|---------|
 | `controller/PhotoController.java` | REST endpoints; face-count gate; custom-spec JSON parsing |
-| `service/PhotoAnalysisService.java` | Compliance checks + image correction logic |
-| `service/FaceDetectionService.java` | Two-pass Haar Cascade face counting |
+| `service/PhotoAnalysisService.java` | Compliance checks (including face-ratio check via `detectPrimaryFace`) + face-aware image correction logic |
+| `service/FaceDetectionService.java` | Two-pass Haar Cascade: `countFaces` (multiple-people gate) and `detectPrimaryFace` (returns largest face bounding box) |
 | `model/CountrySpec.java` | Spec model (widthMm, heightMm, widthPx, heightPx, dpi, backgroundColor, faceRatioMin/Max, requirementsBulletPoints) |
 | `resources/country-specs.json` | Country spec data |
 | `resources/haarcascade_frontalface_alt2.xml` | Alt2 cascade (bundled) |
@@ -89,7 +95,7 @@ Uses Thumbnailator for scaling (cover-mode: scale to fill both dimensions), then
 | `src/components/CustomSpecForm.jsx` | Form for entering custom passport spec |
 | `src/components/PreUploadRequirementsChecklist.jsx` | Shows country-specific requirements (bullets, description, official link) immediately after country selection, before upload |
 | `src/components/ComplianceChecklist.jsx` | Displays check results + disclaimer + official links |
-| `src/components/PhotoComparison.jsx` | Before/after slider |
+| `src/components/PhotoComparison.jsx` | Before/after slider; post-correction banner (amber warning listing checks that still fail after correction — face size, lighting, etc.; green "all requirements met" when all pass; Dimensions/Aspect Ratio/Background are always fixed by the tool and never listed as retake items) |
 | `src/services/api.js` | Axios calls to backend (supports `customSpec` param) |
 | `src/services/faceDetection.js` | face-api.js TinyFaceDetector wrapper |
 

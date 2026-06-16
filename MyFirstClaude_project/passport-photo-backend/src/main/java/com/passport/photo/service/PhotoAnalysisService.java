@@ -14,6 +14,7 @@ import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -42,7 +43,9 @@ import java.util.Map;
  *   <li>Aspect Ratio — within ±15% of the target ratio</li>
  *   <li>Background Color — corner sampling: &gt;75% of sampled corner pixels are bright (R,G,B &gt; 200)</li>
  *   <li>Resolution / Quality — total pixel area meets or exceeds the required area</li>
- *   <li>Face Presence (estimated) — colour variance in the upper-centre region exceeds a threshold</li>
+ *   <li>Face Size — face height as a fraction of photo height, checked against the country spec's
+ *       {@code faceRatioMin}/{@code faceRatioMax} using Haar Cascade detection; falls back to a
+ *       colour-variance heuristic when detection is unavailable</li>
  * </ol>
  *
  * @version 1.0
@@ -53,13 +56,22 @@ public class PhotoAnalysisService {
     private static final Logger log = LoggerFactory.getLogger(PhotoAnalysisService.class);
 
     private final Map<String, CountrySpec> countrySpecs;
+    private final FaceDetectionService faceDetectionService;
+
+    /** For tests only — face detection falls back to colour-variance heuristic. */
+    public PhotoAnalysisService() {
+        this(null);
+    }
 
     /**
-     * Loads country specifications from {@code country-specs.json} on the classpath.
+     * Spring-managed constructor. {@code FaceDetectionService} is injected to enable
+     * country-specific face-ratio compliance checks.
      *
-     * @throws RuntimeException if the file is missing or cannot be parsed
+     * @throws RuntimeException if {@code country-specs.json} is missing or cannot be parsed
      */
-    public PhotoAnalysisService() {
+    @Autowired
+    public PhotoAnalysisService(FaceDetectionService faceDetectionService) {
+        this.faceDetectionService = faceDetectionService;
         try (InputStream is = getClass().getResourceAsStream("/country-specs.json")) {
             if (is == null) throw new RuntimeException("country-specs.json not found on classpath");
             countrySpecs = new ObjectMapper().readValue(is, new TypeReference<>() {});
@@ -114,7 +126,7 @@ public class PhotoAnalysisService {
         checks.add(checkAspectRatio(image, spec));
         checks.add(checkBackground(image, spec));
         checks.add(checkResolution(image, spec));
-        checks.add(checkFacePosition(image));
+        checks.add(checkFaceRatio(image, spec, imageBytes));
 
         long passed = checks.stream().filter(ComplianceCheck::isPassed).count();
         return new AnalysisResult(label, spec, checks, passed == checks.size(), (int) passed, checks.size());
@@ -137,9 +149,9 @@ public class PhotoAnalysisService {
     /**
      * Corrects a photo to exactly match the pixel dimensions specified in the supplied spec.
      *
-     * <p>Uses cover-mode scaling (both dimensions filled) followed by a centre crop with a
-     * slight top-bias vertical offset to keep the face in frame, then fills remaining canvas
-     * area with the spec's background colour.</p>
+     * <p>When face detection is available, crops the image so the face occupies the midpoint
+     * of the spec's required face-ratio range before scaling to target dimensions. Falls back
+     * to cover-mode scaling with a centre crop when no face is detected.</p>
      *
      * @param imageBytes raw bytes of the uploaded image
      * @param spec       the target {@link CountrySpec}
@@ -151,10 +163,22 @@ public class PhotoAnalysisService {
         BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
-        BufferedImage corrected = buildCorrectedImage(original, spec);
+        int[] faceRect = detectFaceForCorrection(imageBytes);
+        BufferedImage corrected = buildCorrectedImage(original, spec, faceRect);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(corrected, "jpg", baos);
         return baos.toByteArray();
+    }
+
+    /** Detects the primary face for use in correction; returns null on failure or unavailability. */
+    private int[] detectFaceForCorrection(byte[] imageBytes) {
+        if (faceDetectionService == null) return null;
+        try {
+            return faceDetectionService.detectPrimaryFace(imageBytes);
+        } catch (Exception e) {
+            log.warn("Face detection skipped during correction: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -184,7 +208,7 @@ public class PhotoAnalysisService {
         BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
-        BufferedImage corrected = buildCorrectedImage(original, spec);
+        BufferedImage corrected = buildCorrectedImage(original, spec, detectFaceForCorrection(imageBytes));
 
         int pw = spec.getWidthPx(), ph = spec.getHeightPx();
         int sheetW = 1800, sheetH = 1200;  // 4×6" landscape at 300 DPI
@@ -244,7 +268,7 @@ public class PhotoAnalysisService {
         BufferedImage original = ImageIO.read(new ByteArrayInputStream(imageBytes));
         if (original == null) throw new IllegalArgumentException("Cannot read image — please upload a valid JPEG or PNG.");
 
-        BufferedImage corrected = buildCorrectedImage(original, spec);
+        BufferedImage corrected = buildCorrectedImage(original, spec, detectFaceForCorrection(imageBytes));
 
         // Convert mm → PDF points (72 pt = 1 inch = 25.4 mm)
         float photoWPt = (float) (spec.getWidthMm()  / 25.4 * 72);
@@ -414,23 +438,47 @@ public class PhotoAnalysisService {
     }
 
     /**
-     * Estimates whether a face is present and centred by measuring pixel colour variance.
-     *
-     * <p>Samples the red channel in the upper-centre quarter of the image (x: 25–75%,
-     * y: 12.5–62.5%) and computes variance. Variance above 200 is treated as evidence
-     * of image content (i.e. a face). Near-zero variance suggests a blank or uniformly
-     * coloured region.</p>
-     *
-     * <p><strong>Limitation:</strong> this is a heuristic, not a true face detector. It can
-     * produce false negatives on very uniform photos and false positives on patterned
-     * backgrounds.</p>
-     *
-     * @param image the decoded source image
-     * @return a {@link ComplianceCheck} estimating whether a face is centred in the upper region
+     * Checks face size against the country spec's {@code faceRatioMin}/{@code faceRatioMax}
+     * using Haar Cascade detection. Falls back to {@link #checkFacePresenceHeuristic} when the
+     * detector is unavailable or finds no face.
      */
-    private ComplianceCheck checkFacePosition(BufferedImage image) {
-        // Heuristic: sample colour variance in the upper-centre region (where a face would be).
-        // High variance signals image content; near-zero variance suggests a blank / uniform area.
+    private ComplianceCheck checkFaceRatio(BufferedImage image, CountrySpec spec, byte[] imageBytes) {
+        if (faceDetectionService != null && spec.getFaceRatioMin() > 0 && spec.getFaceRatioMax() > 0) {
+            try {
+                int[] face = faceDetectionService.detectPrimaryFace(imageBytes);
+                if (face != null) {
+                    double faceRatio = (double) face[3] / image.getHeight();
+                    boolean passed = faceRatio >= spec.getFaceRatioMin()
+                                  && faceRatio <= spec.getFaceRatioMax();
+                    int pctActual = (int) Math.round(faceRatio * 100);
+                    int pctMin    = (int) Math.round(spec.getFaceRatioMin() * 100);
+                    int pctMax    = (int) Math.round(spec.getFaceRatioMax() * 100);
+                    String expected = pctMin + "–" + pctMax + "% of photo height";
+                    String actual   = pctActual + "% of photo height";
+                    String message;
+                    if (passed) {
+                        message = "Face height is within the required range (" + actual + ")";
+                    } else if (faceRatio < spec.getFaceRatioMin()) {
+                        message = "Face too small — move closer or crop tighter ("
+                                  + actual + ", need ≥" + pctMin + "%)";
+                    } else {
+                        message = "Face too large — back away or use a wider crop ("
+                                  + actual + ", need ≤" + pctMax + "%)";
+                    }
+                    return new ComplianceCheck("Face Size", passed, message, expected, actual);
+                }
+            } catch (Exception e) {
+                log.warn("Face detection failed during compliance check: {}", e.getMessage());
+            }
+        }
+        return checkFacePresenceHeuristic(image);
+    }
+
+    /**
+     * Fallback face check: estimates presence via red-channel variance in the upper-centre region.
+     * Used when Haar Cascade detection is unavailable or finds no face.
+     */
+    private ComplianceCheck checkFacePresenceHeuristic(BufferedImage image) {
         int x0 = image.getWidth()  / 4,  x1 = 3 * image.getWidth()  / 4;
         int y0 = image.getHeight() / 8,  y1 = 5 * image.getHeight() / 8;
         int step = Math.max(1, (x1 - x0) / 20);
@@ -452,43 +500,83 @@ public class PhotoAnalysisService {
     /**
      * Scales and crops the source image to exactly match the spec's target dimensions.
      *
-     * <p>Algorithm:
-     * <ol>
-     *   <li>Compute a scale factor so that both target dimensions are fully covered
-     *       (cover mode — no empty borders).</li>
-     *   <li>Scale the source using Thumbnailator with bicubic interpolation.</li>
-     *   <li>Centre-crop horizontally; apply a 1/3 top-bias vertical crop so the face
-     *       stays in frame rather than being centred on empty lower area.</li>
-     *   <li>Fill the canvas with the spec's background colour before drawing the image
-     *       so any residual border is the correct colour.</li>
-     * </ol>
-     * </p>
+     * <p>When {@code faceRect} is provided and the spec defines face-ratio targets, uses a
+     * face-aware crop: calculates a crop window sized so the detected face will occupy the
+     * midpoint of {@code faceRatioMin–faceRatioMax} in the output, then scales the crop to
+     * the target dimensions. This simultaneously fixes face size and often removes off-white
+     * corners that would otherwise fail the background check.</p>
      *
-     * @param src  the original decoded image
-     * @param spec the target country spec
+     * <p>Falls back to cover-mode scaling (both dimensions filled) with a centre-horizontal,
+     * top-biased vertical crop when no face rect is available.</p>
+     *
+     * @param src      the original decoded image
+     * @param spec     the target country spec
+     * @param faceRect {x, y, width, height} of the detected face in {@code src} pixels, or null
      * @return a new {@link BufferedImage} with exactly {@code widthPx × heightPx} pixels
      * @throws IOException if Thumbnailator fails to scale the image
      */
-    private BufferedImage buildCorrectedImage(BufferedImage src, CountrySpec spec) throws IOException {
+    private BufferedImage buildCorrectedImage(BufferedImage src, CountrySpec spec, int[] faceRect) throws IOException {
         int tw = spec.getWidthPx(), th = spec.getHeightPx();
 
-        // Scale to "cover" mode — both target dimensions are fully filled
+        // ── Face-aware crop ──────────────────────────────────────────────────────────
+        if (faceRect != null && spec.getFaceRatioMin() > 0 && spec.getFaceRatioMax() > 0) {
+            // Target the upper end of the allowed range. Haar cascade bounding boxes are slightly
+            // smaller than what re-detection measures on the scaled JPEG output, so aiming at
+            // faceRatioMax keeps the actual result comfortably within [faceRatioMin, faceRatioMax].
+            double targetRatio = spec.getFaceRatioMax();
+            int faceX = faceRect[0], faceY = faceRect[1], faceW = faceRect[2], faceH = faceRect[3];
+
+            // Guard: a zero-dimension rect (shouldn't happen but cascade bugs can produce them)
+            // falls through to cover-mode rather than crashing with RasterFormatException.
+            if (faceH > 0 && faceW > 0) {
+                // Crop window height so that faceH = targetRatio × cropH
+                double cropH = faceH / targetRatio;
+                double cropW = cropH * tw / th; // preserve target aspect ratio
+
+                if (cropW <= src.getWidth() && cropH <= src.getHeight()) {
+                    // Top margin: ~4 mm above the top of the head, scaled to spec height (clamp 6–12%)
+                    double topFrac = spec.getHeightMm() > 0
+                            ? Math.max(0.06, Math.min(0.12, 4.0 / spec.getHeightMm()))
+                            : 0.08;
+                    // Use floor for crop dimensions to guarantee cW/cH <= src dimensions
+                    // (Math.ceil could produce a value 1 px larger than cropW, causing
+                    // getSubimage to throw RasterFormatException when cropW ≈ src.getWidth())
+                    int cW = (int) Math.floor(cropW);
+                    int cH = (int) Math.floor(cropH);
+                    int cX = (int) Math.round(faceX + faceW / 2.0 - cW / 2.0);
+                    int cY = (int) Math.round(faceY - topFrac * cH);
+                    // Clamp crop window to image bounds
+                    cX = Math.max(0, Math.min(cX, src.getWidth()  - cW));
+                    cY = Math.max(0, Math.min(cY, src.getHeight() - cH));
+
+                    log.debug("Face-aware crop: face={},{} {}×{} → crop={},{} {}×{} (targetRatio={})",
+                            faceX, faceY, faceW, faceH, cX, cY, cW, cH, targetRatio);
+
+                    BufferedImage cropped = src.getSubimage(cX, cY, cW, cH);
+                    BufferedImage cropScaled = Thumbnails.of(cropped)
+                            .size(tw, th).keepAspectRatio(false).asBufferedImage();
+                    return paintOnCanvas(cropScaled, tw, th, spec, 0, 0);
+                }
+            } else {
+                log.warn("Detected face rect has zero dimension ({} × {}) — falling back to cover crop", faceW, faceH);
+            }
+        }
+
+        // ── Fallback: cover-mode scale + centre crop ─────────────────────────────────
         double scale = Math.max((double) tw / src.getWidth(), (double) th / src.getHeight());
         int sw = (int) Math.ceil(src.getWidth()  * scale);
         int sh = (int) Math.ceil(src.getHeight() * scale);
+        BufferedImage scaled = Thumbnails.of(src).size(sw, sh).keepAspectRatio(false).asBufferedImage();
+        return paintOnCanvas(scaled, tw, th, spec, -(sw - tw) / 2, -(sh - th) / 3);
+    }
 
-        BufferedImage scaled = Thumbnails.of(src)
-                .size(sw, sh)
-                .keepAspectRatio(false)
-                .asBufferedImage();
-
+    /** Draws {@code img} onto a spec-background canvas of size {@code tw × th} at offset {@code (dx, dy)}. */
+    private BufferedImage paintOnCanvas(BufferedImage img, int tw, int th, CountrySpec spec, int dx, int dy) {
         BufferedImage canvas = new BufferedImage(tw, th, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = canvas.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g.setRenderingHint(RenderingHints.KEY_RENDERING,     RenderingHints.VALUE_RENDER_QUALITY);
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,  RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // Fill background
         try { g.setColor(Color.decode(spec.getBackgroundColorHex())); }
         catch (NumberFormatException e) {
             log.warn("Invalid backgroundColorHex '{}' for spec '{}' — falling back to white",
@@ -496,13 +584,8 @@ public class PhotoAnalysisService {
             g.setColor(Color.WHITE);
         }
         g.fillRect(0, 0, tw, th);
-
-        // Centre-horizontally; slight top-bias vertically to keep face in frame
-        int dx = -(sw - tw) / 2;
-        int dy = -(sh - th) / 3;
-        g.drawImage(scaled, dx, dy, null);
+        g.drawImage(img, dx, dy, null);
         g.dispose();
-
         return canvas;
     }
 }

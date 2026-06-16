@@ -1,4 +1,4 @@
-﻿package com.passport.photo.model;
+package com.passport.photo.model;
 
 import java.util.List;
 

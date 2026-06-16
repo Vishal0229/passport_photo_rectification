@@ -1,4 +1,10 @@
-export default function PhotoComparison({ originalUrl, correctedUrl, country, onDownloadSheet, sheetLoading, onDownloadPdf, pdfLoading }) {
+// Checks that correction always fixes (resize + background fill) — omit from the
+// "still needs a retake" banner so only genuinely uncorrectable issues are shown.
+const CORRECTED_BY_TOOL = new Set(['Image Dimensions', 'Aspect Ratio', 'Background Color'])
+
+export default function PhotoComparison({ originalUrl, correctedUrl, country, analysis, onDownloadSheet, sheetLoading, onDownloadPdf, pdfLoading }) {
+  const failedChecks = analysis?.checks?.filter(c => !c.passed && !CORRECTED_BY_TOOL.has(c.rule)) ?? []
+
   const handleDownload = () => {
     const link = document.createElement('a')
     link.href = correctedUrl
@@ -10,7 +16,27 @@ export default function PhotoComparison({ originalUrl, correctedUrl, country, on
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6 mt-6">
-      <h2 className="text-base font-semibold text-gray-700 mb-5">Before &amp; After</h2>
+      <h2 className="text-base font-semibold text-gray-700 mb-4">Before &amp; After</h2>
+
+      {analysis && (failedChecks.length > 0 ? (
+        <div role="alert" className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <p className="text-xs font-semibold text-amber-800 mb-2">
+            <span aria-hidden="true">⚠️</span> Dimensions &amp; background adjusted — but these issues still require a retake:
+          </p>
+          <ul className="space-y-1">
+            {failedChecks.map((check, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-amber-700">
+                <span aria-hidden="true" className="shrink-0 mt-0.5">❌</span>
+                <span><strong>{check.rule}:</strong> {check.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-xs font-semibold text-green-800">
+          <span aria-hidden="true">✅</span> All requirements met — photo is passport-ready for {country}
+        </div>
+      ))}
 
       <div className="grid grid-cols-2 gap-4">
         {/* Original */}

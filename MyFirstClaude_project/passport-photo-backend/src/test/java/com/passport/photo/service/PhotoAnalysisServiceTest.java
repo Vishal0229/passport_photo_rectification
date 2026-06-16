@@ -1,4 +1,4 @@
-﻿package com.passport.photo.service;
+package com.passport.photo.service;
 
 import com.passport.photo.model.AnalysisResult;
 import com.passport.photo.model.ComplianceCheck;

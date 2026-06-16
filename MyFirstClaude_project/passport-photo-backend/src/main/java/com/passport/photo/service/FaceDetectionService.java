@@ -155,4 +155,79 @@ public class FaceDetectionService {
             gray.close();
         }
     }
+
+    /**
+     * Detects the primary (largest) face and returns its bounding box in original image
+     * pixel coordinates, or {@code null} if no face is detected.
+     *
+     * <p>Uses the same two-pass strategy as {@link #countFaces}. Pass 2 coordinates are
+     * divided by 2 to map back from the upscaled 2× space to original pixel space.</p>
+     *
+     * @param imageBytes raw image bytes (JPEG, PNG, or WEBP)
+     * @return {@code int[]{x, y, width, height}} of the largest face in original pixels,
+     *         or {@code null} if no face is found
+     * @throws IllegalArgumentException if the bytes cannot be decoded as an image
+     */
+    public synchronized int[] detectPrimaryFace(byte[] imageBytes) {
+        BytePointer bp = new BytePointer(imageBytes);
+        Mat buffer = new Mat(1, imageBytes.length, CV_8UC1, bp);
+        Mat gray = imdecode(buffer, IMREAD_GRAYSCALE);
+        bp.close();
+        buffer.close();
+
+        if (gray.empty()) {
+            gray.close();
+            throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
+        }
+
+        try {
+            // Pass 1: strict detection on original image
+            RectVector faces = new RectVector();
+            try {
+                classifier.detectMultiScale(gray, faces, 1.1, 4, 0, new Size(30, 30), new Size());
+                if (faces.size() > 0) {
+                    return largestFace(faces, 1);
+                }
+            } finally {
+                faces.close();
+            }
+
+            // Pass 2: alt2 cascade on 2× upscaled image; halve coords to map back
+            Mat up = new Mat();
+            try {
+                resize(gray, up, new Size(gray.cols() * 2, gray.rows() * 2), 0, 0, INTER_LINEAR);
+                equalizeHist(up, up);
+                RectVector faces2 = new RectVector();
+                try {
+                    classifierAlt2.detectMultiScale(up, faces2, 1.05, 2, 0, new Size(30, 30), new Size());
+                    if (faces2.size() > 0) {
+                        return largestFace(faces2, 2);
+                    }
+                } finally {
+                    faces2.close();
+                }
+            } finally {
+                up.close();
+            }
+
+            return null;
+        } finally {
+            gray.close();
+        }
+    }
+
+    /** Returns {x, y, w, h} of the largest face in the vector, scaled down by {@code scale}. */
+    private int[] largestFace(RectVector faces, int scale) {
+        org.bytedeco.opencv.opencv_core.Rect best = null;
+        for (int i = 0; i < faces.size(); i++) {
+            org.bytedeco.opencv.opencv_core.Rect r = faces.get(i);
+            // Cast to long before multiplying to avoid int overflow on large (e.g. 2× upscaled) images
+            if (best == null || (long) r.width() * r.height() > (long) best.width() * best.height()) {
+                best = r;
+            }
+        }
+        if (best == null) return null;
+        return new int[]{ best.x() / scale, best.y() / scale,
+                          best.width() / scale, best.height() / scale };
+    }
 }

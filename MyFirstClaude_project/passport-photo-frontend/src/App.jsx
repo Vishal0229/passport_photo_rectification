@@ -336,6 +336,7 @@ export default function App() {
             originalUrl={photoUrl}
             correctedUrl={correctedUrl}
             country={country}
+            analysis={analysis}
             onDownloadSheet={handleDownloadSheet}
             sheetLoading={downloadingSheet}
             onDownloadPdf={handleDownloadPdf}
