@@ -168,7 +168,7 @@ class PhotoControllerTest {
                 .file(minimalJpeg())
                 .param("country", "US"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.message").value(containsString("Failed to process image")));
+            .andExpect(jsonPath("$.message").value(containsString("Image processing failed")));
     }
 
     @Test
@@ -197,7 +197,7 @@ class PhotoControllerTest {
                 .param("country", "Custom")
                 .param("customSpec", "{not-valid-json"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.message").value(containsString("Failed to process image")));
+            .andExpect(jsonPath("$.message").value(containsString("Image processing failed")));
     }
 
     // ─── POST /api/correct ───────────────────────────────────────────────────────
@@ -253,7 +253,7 @@ class PhotoControllerTest {
                 .param("country", "Custom")
                 .param("customSpec", "{not-valid-json"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.message").value(containsString("Failed to correct image")));
+            .andExpect(jsonPath("$.message").value(containsString("Image processing failed")));
     }
 
     @Test
@@ -321,7 +321,7 @@ class PhotoControllerTest {
                 .param("country", "Custom")
                 .param("customSpec", "{not-valid-json"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.message").value(containsString("Failed to generate PDF")));
+            .andExpect(jsonPath("$.message").value(containsString("Image processing failed")));
     }
 
     @Test
@@ -389,7 +389,7 @@ class PhotoControllerTest {
                 .param("country", "Custom")
                 .param("customSpec", "{not-valid-json"))
             .andExpect(status().isInternalServerError())
-            .andExpect(jsonPath("$.message").value(containsString("Failed to generate photo sheet")));
+            .andExpect(jsonPath("$.message").value(containsString("Image processing failed")));
     }
 
     @Test

@@ -109,6 +109,9 @@ public class FaceDetectionService {
      * @throws IllegalArgumentException if the bytes cannot be decoded as an image
      */
     public synchronized int countFaces(byte[] imageBytes) {
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
+        }
         BytePointer bp = new BytePointer(imageBytes);
         Mat buffer = new Mat(1, imageBytes.length, CV_8UC1, bp);
         Mat gray = imdecode(buffer, IMREAD_GRAYSCALE);
@@ -169,6 +172,9 @@ public class FaceDetectionService {
      * @throws IllegalArgumentException if the bytes cannot be decoded as an image
      */
     public synchronized int[] detectPrimaryFace(byte[] imageBytes) {
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
+        }
         BytePointer bp = new BytePointer(imageBytes);
         Mat buffer = new Mat(1, imageBytes.length, CV_8UC1, bp);
         Mat gray = imdecode(buffer, IMREAD_GRAYSCALE);

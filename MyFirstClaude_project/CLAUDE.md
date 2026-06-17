@@ -68,6 +68,29 @@ When `country=Custom`, the frontend sends a `customSpec` JSON field with all `Co
 - `haarcascade_frontalface_default.xml` — downloaded at Maven build time via `download-maven-plugin` into `target/generated-resources/`, bundled into the fat JAR.
 - `haarcascade_frontalface_alt2.xml` — bundled directly in `src/main/resources/` (the Maven download plugin had a Windows cache-index permission error for a second download execution).
 
+### Logging architecture
+
+**Backend — `LoggingAspect`** (`aspect/LoggingAspect.java`)
+Spring AOP `@Around` aspect applied to all methods in `com.passport.photo.*` (excluding the aspect class itself).
+- Entry: `>> ClassName.method(Type1, Type2)` at DEBUG — argument *types* only, never values.
+- Exit: `<< ClassName.method → ReturnType` at DEBUG.
+- Exception: `!! ClassName.method threw ExType: message` at ERROR — exception messages are sanitised (newlines stripped) before logging, and nothing internal is forwarded to clients.
+- Requires the `spring-boot-starter-aop` dependency in `pom.xml`.
+
+**Backend — `GlobalExceptionHandler`** (`controller/GlobalExceptionHandler.java`)
+`@RestControllerAdvice` catch-all that maps exceptions to HTTP responses:
+- `IllegalArgumentException` → 400 Bad Request
+- Spring MVC exceptions (e.g. `MethodArgumentNotValidException`) → appropriate 4xx
+- All others → 500 Internal Server Error
+Returns generic, safe messages to clients; sanitised details are logged server-side only.
+
+**Frontend — `src/utils/logger.js`**
+Thin logging utility mirroring the backend pattern:
+- `logEntry(methodName, argTypes)` — logs method entry at the console DEBUG level.
+- `logExit(methodName, returnType)` — logs method exit.
+- `logError(source, error)` — logs errors with source context.
+- `initGlobalErrorLogging()` — registers `window.onerror` and `window.onunhandledrejection` handlers (idempotent; safe to call multiple times).
+
 ### Image correction
 Two code paths depending on whether a face is detected:
 
@@ -85,6 +108,8 @@ Two code paths depending on whether a face is detected:
 | `model/CountrySpec.java` | Spec model (widthMm, heightMm, widthPx, heightPx, dpi, backgroundColor, faceRatioMin/Max, requirementsBulletPoints) |
 | `resources/country-specs.json` | Country spec data |
 | `resources/haarcascade_frontalface_alt2.xml` | Alt2 cascade (bundled) |
+| `aspect/LoggingAspect.java` | AOP `@Around` aspect — logs entry/exit/exception for all methods in `com.passport.photo.*`; argument types only, never values |
+| `controller/GlobalExceptionHandler.java` | `@RestControllerAdvice` catch-all — maps `IllegalArgumentException` → 400, Spring MVC exceptions → 4xx, all others → 500; returns safe generic messages to clients |
 
 ### Frontend
 | File | Purpose |
@@ -98,6 +123,7 @@ Two code paths depending on whether a face is detected:
 | `src/components/PhotoComparison.jsx` | Before/after slider; post-correction banner (amber warning listing checks that still fail after correction — face size, lighting, etc.; green "all requirements met" when all pass; Dimensions/Aspect Ratio/Background are always fixed by the tool and never listed as retake items) |
 | `src/services/api.js` | Axios calls to backend (supports `customSpec` param) |
 | `src/services/faceDetection.js` | face-api.js TinyFaceDetector wrapper |
+| `src/utils/logger.js` | Logging utility: `logEntry`, `logExit`, `logError`; `initGlobalErrorLogging()` registers global `window.onerror` / `unhandledrejection` handlers |
 
 ## Supported countries (built-in specs)
 
@@ -121,6 +147,10 @@ Two code paths depending on whether a face is detected:
 | Singapore | Singapore | 413×531 px (35×45 mm) |
 | Mexico | Mexico | 413×531 px (35×45 mm) |
 | Custom | My Country not on list | User-entered |
+
+## Security
+
+Open findings are tracked in `securityIssues.md` at the project root (1 HIGH, 2 MEDIUM, 2 LOW, 2 INFO). Review that file before deploying to production; none of the findings are auto-remediated by the application code.
 
 ## Official spec links (in ComplianceChecklist.jsx)
 - US: travel.state.gov passports/requirements/photos

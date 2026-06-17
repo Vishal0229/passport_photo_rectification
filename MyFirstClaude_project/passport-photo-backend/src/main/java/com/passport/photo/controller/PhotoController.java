@@ -112,7 +112,7 @@ public class PhotoController {
         } catch (IOException e) {
             log.error("POST /analyze failed — country={}", country, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Failed to process image: " + e.getMessage()));
+                    .body(Map.of("message", "Image processing failed — please upload a valid JPEG or PNG."));
         } finally {
             wipeBytes(bytes);
         }
@@ -169,7 +169,7 @@ public class PhotoController {
         } catch (IOException e) {
             log.error("POST /correct failed — country={}", country, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Failed to correct image: " + e.getMessage()));
+                    .body(Map.of("message", "Image processing failed — please upload a valid JPEG or PNG."));
         } finally {
             wipeBytes(bytes);
         }
@@ -224,7 +224,7 @@ public class PhotoController {
         } catch (IOException e) {
             log.error("POST /pdf failed — country={}", country, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Failed to generate PDF: " + e.getMessage()));
+                    .body(Map.of("message", "Image processing failed — please upload a valid JPEG or PNG."));
         } finally {
             wipeBytes(bytes);
         }
@@ -281,14 +281,15 @@ public class PhotoController {
         } catch (IOException e) {
             log.error("POST /sheet failed — country={}", country, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Failed to generate photo sheet: " + e.getMessage()));
+                    .body(Map.of("message", "Image processing failed — please upload a valid JPEG or PNG."));
         } finally {
             wipeBytes(bytes);
         }
     }
 
     /**
-     * Returns a 400 error response if the file's MIME type is not JPEG, PNG, or WEBP.
+     * Returns a 400 error response if the file's MIME type is not JPEG, PNG, or WEBP,
+     * or if the file's magic bytes do not match a known image format.
      *
      * @param file the uploaded file
      * @return an error {@link ResponseEntity}, or {@code null} if the type is acceptable
@@ -300,7 +301,55 @@ public class PhotoController {
                 "message", "Unsupported file type. Please upload a JPEG, PNG, or WEBP image."
             ));
         }
+        try {
+            byte[] header = file.getInputStream().readNBytes(12);
+            if (!isAllowedImageType(header)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", "Unsupported file type. Please upload a JPEG, PNG, or WEBP image."
+                ));
+            }
+        } catch (IOException e) {
+            log.warn("Could not read file header for magic-byte check", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "message", "Unsupported file type. Please upload a JPEG, PNG, or WEBP image."
+            ));
+        }
         return null;
+    }
+
+    /**
+     * Checks the first bytes of the file for known image magic bytes.
+     *
+     * <ul>
+     *   <li>JPEG: {@code FF D8 FF}</li>
+     *   <li>PNG:  {@code 89 50 4E 47}</li>
+     *   <li>WEBP: {@code 52 49 46 46 ?? ?? ?? ?? 57 45 42 50}</li>
+     * </ul>
+     *
+     * @param bytes the first bytes of the uploaded file (at least 12 bytes for WEBP detection)
+     * @return {@code true} if the bytes match a supported image format
+     */
+    private static boolean isAllowedImageType(byte[] bytes) {
+        if (bytes == null || bytes.length < 3) return false;
+        // JPEG: FF D8 FF
+        if ((bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xD8 && (bytes[2] & 0xFF) == 0xFF) {
+            return true;
+        }
+        // PNG: 89 50 4E 47
+        if (bytes.length >= 4
+                && (bytes[0] & 0xFF) == 0x89 && (bytes[1] & 0xFF) == 0x50
+                && (bytes[2] & 0xFF) == 0x4E && (bytes[3] & 0xFF) == 0x47) {
+            return true;
+        }
+        // WEBP: 52 49 46 46 ?? ?? ?? ?? 57 45 42 50
+        if (bytes.length >= 12
+                && (bytes[0] & 0xFF) == 0x52 && (bytes[1] & 0xFF) == 0x49
+                && (bytes[2] & 0xFF) == 0x46 && (bytes[3] & 0xFF) == 0x46
+                && (bytes[8] & 0xFF) == 0x57 && (bytes[9] & 0xFF) == 0x45
+                && (bytes[10] & 0xFF) == 0x42 && (bytes[11] & 0xFF) == 0x50) {
+            return true;
+        }
+        return false;
     }
 
     /**
