@@ -29,4 +29,7 @@ RUN addgroup --system appgroup \
     && adduser --system --no-create-home --shell /bin/false --ingroup appgroup appuser
 USER appuser
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-XX:TieredStopAtLevel=1", \
+    "-jar", "app.jar"]
