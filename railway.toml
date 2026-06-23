@@ -1,0 +1,10 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "MyFirstClaude_project/passport-photo-backend/Dockerfile"
+buildContext = "MyFirstClaude_project/passport-photo-backend"
+
+[deploy]
+healthcheckPath = "/api/countries"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
