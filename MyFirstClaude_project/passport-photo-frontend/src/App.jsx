@@ -34,6 +34,7 @@ export default function App() {
   const [photoUrl, setPhotoUrl] = useState(null)
   const [photoDimensions, setPhotoDimensions] = useState(null)
   const [countrySpecs, setCountrySpecs] = useState(null)
+  const [countrySpecsLoading, setCountrySpecsLoading] = useState(true)
   const [country, setCountry] = useState('US')
   const [customSpec, setCustomSpec] = useState(DEFAULT_CUSTOM_SPEC)
   const [analysis, setAnalysis] = useState(null)
@@ -57,6 +58,7 @@ export default function App() {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:8080'}/api/countries`)
       .then(r => r.json()).then(setCountrySpecs).catch(() => {})
+      .finally(() => setCountrySpecsLoading(false))
   }, [])
 
   useEffect(() => {
@@ -246,9 +248,16 @@ export default function App() {
           <CountrySelector country={country} onChange={handleCountryChange} />
           {country === 'Custom'
             ? <CustomSpecForm spec={customSpec} onChange={setCustomSpec} />
+            : countrySpecsLoading
+            ? <div className="bg-white rounded-2xl shadow-md p-6 flex items-center gap-3">
+                <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="text-sm text-gray-500">Loading requirements…</span>
+              </div>
             : countrySpecs?.[country]
             ? <PreUploadRequirementsChecklist spec={countrySpecs[country]} />
-            : <div />
+            : <div className="bg-white rounded-2xl shadow-md p-6">
+                <p className="text-sm text-gray-400">Could not load country requirements. Make sure the backend is running.</p>
+              </div>
           }
         </div>
 

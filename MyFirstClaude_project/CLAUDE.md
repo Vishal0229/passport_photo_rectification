@@ -35,6 +35,26 @@ $proc = (netstat -ano | Select-String ":8080 " | Select-String "LISTENING" | For
 if ($proc) { Stop-Process -Id $proc -Force }
 ```
 
+## Deployment (Render)
+
+The app deploys to Render via `render.yaml` at the repo root (Render Blueprint).
+
+| Service | Type | Config |
+|---------|------|--------|
+| `passport-photo-backend` | Docker Web Service | `passport-photo-backend/Dockerfile` |
+| `passport-photo-frontend` | Static Site | `passport-photo-frontend/` → `dist/` |
+
+### First-deploy steps
+1. Push the repo to GitHub and connect it to Render (New → Blueprint).
+2. After both services are live, copy the **backend** public URL from the Render dashboard.
+3. On the **frontend** service → Environment → set `VITE_API_URL` to the backend URL (e.g. `https://passport-photo-backend.onrender.com`) → Save → Manual Deploy.
+4. Copy the **frontend** public URL.
+5. On the **backend** service → Environment → set `CORS_ALLOWED_ORIGINS` to the frontend URL (e.g. `https://passport-photo-frontend.onrender.com`) → Save → Manual Deploy.
+
+### Free-tier notes
+- Backend spins down after 15 min idle — first request after idle takes ~30-60 s (Spring Boot + OpenCV cold start).
+- Digest-pinned base images: update pins periodically with `docker pull <image>` and `docker inspect --format='{{index .RepoDigests 0}}'` to stay current on security patches.
+
 ## API endpoints
 
 | Method | Path | Purpose |
@@ -42,6 +62,8 @@ if ($proc) { Stop-Process -Id $proc -Force }
 | GET | `/api/countries` | List all supported country specs (returns full `CountrySpec` objects including `requirementsBulletPoints`) |
 | POST | `/api/analyze` | Analyze photo compliance |
 | POST | `/api/correct` | Return corrected photo (JPEG bytes) |
+| POST | `/api/sheet` | Generate print-ready 4×6" JPEG photo sheet (multiple copies tiled at 300 DPI) |
+| POST | `/api/pdf` | Generate print-ready A4 PDF photo sheet |
 
 Both POST endpoints accept `multipart/form-data` with:
 - `photo` — image file (JPEG / PNG / WEBP)
@@ -114,7 +136,7 @@ Two code paths depending on whether a face is detected:
 ### Frontend
 | File | Purpose |
 |------|---------|
-| `src/App.jsx` | Root state, orchestrates analyze/correct flow |
+| `src/App.jsx` | Root state, orchestrates analyze/correct flow; countrySpecsLoading state shows spinner/fallback while /api/countries fetch is in flight or failed |
 | `src/components/UploadZone.jsx` | Drag-drop upload; runs frontend face detection; `onNewFileSelected` clears stale state |
 | `src/components/CountrySelector.jsx` | Country dropdown including Custom option |
 | `src/components/CustomSpecForm.jsx` | Form for entering custom passport spec |
