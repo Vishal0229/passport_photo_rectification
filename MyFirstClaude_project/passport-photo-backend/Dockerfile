@@ -25,7 +25,10 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -f http://localhost:8080/api/countries || exit 1
 
 # Run as non-root for security (port 8080 does not require root)
-RUN addgroup --system appgroup && adduser --system --no-create-home --shell /bin/false --ingroup appgroup appuser
+RUN addgroup --system appgroup \
+    && adduser --system --no-create-home --shell /bin/false --ingroup appgroup appuser \
+    && mkdir -p /app/logs \
+    && chown appuser:appgroup /app/logs
 USER appuser
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
