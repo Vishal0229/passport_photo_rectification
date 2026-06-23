@@ -18,8 +18,10 @@ COPY --from=build /app/target/passport-photo-1.0.0.jar app.jar
 
 EXPOSE 8080
 
-# Install curl for health check; apply OS patches in the same layer
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+# curl: health check; libgtk2.0-0: OpenCV highgui native lib requires GTK2 at runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl libgtk2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD curl -f http://localhost:8080/api/countries || exit 1
