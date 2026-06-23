@@ -1,7 +1,6 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "MyFirstClaude_project/passport-photo-backend/Dockerfile"
-buildContext = "MyFirstClaude_project/passport-photo-backend"
 
 [deploy]
 healthcheckPath = "/api/countries"

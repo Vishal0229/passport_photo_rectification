@@ -3,11 +3,11 @@ FROM maven:3.9.6-eclipse-temurin-17@sha256:408d89a73e0dc1b14cfbc003f5729720855da
 WORKDIR /app
 
 # Copy pom.xml first for dependency layer caching
-COPY pom.xml .
+COPY MyFirstClaude_project/passport-photo-backend/pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Copy source and build
-COPY src/ src/
+COPY MyFirstClaude_project/passport-photo-backend/src/ src/
 RUN mvn package -DskipTests -B
 
 # Run stage — Ubuntu (glibc) required for OpenCV native libs; Alpine will not work
