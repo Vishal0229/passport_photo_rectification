@@ -66,11 +66,19 @@ public class FaceDetectionService {
      * @throws IllegalStateException if a cascade file is missing from the classpath or is empty
      */
     @PostConstruct
-    public void init() throws IOException {
-        Loader.load(CascadeClassifier.class);
-        classifier     = loadCascade("haarcascade_frontalface_default.xml");
-        classifierAlt2 = loadCascade("haarcascade_frontalface_alt2.xml");
-        log.info("Haar Cascade face detectors ready (default + alt2).");
+    public void init() {
+        try {
+            Loader.load(CascadeClassifier.class);
+            classifier     = loadCascade("haarcascade_frontalface_default.xml");
+            classifierAlt2 = loadCascade("haarcascade_frontalface_alt2.xml");
+            log.info("Haar Cascade face detectors ready (default + alt2).");
+        } catch (Exception e) {
+            // Native OpenCV libs unavailable (e.g. noexec /tmp in container).
+            // App stays up; countFaces returns 0, detectPrimaryFace returns null.
+            log.error("OpenCV face detection unavailable — running without it: {}", e.getMessage());
+            classifier = null;
+            classifierAlt2 = null;
+        }
     }
 
     /**
@@ -109,6 +117,7 @@ public class FaceDetectionService {
      * @throws IllegalArgumentException if the bytes cannot be decoded as an image
      */
     public synchronized int countFaces(byte[] imageBytes) {
+        if (classifier == null) return 0;
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
         }
@@ -172,6 +181,7 @@ public class FaceDetectionService {
      * @throws IllegalArgumentException if the bytes cannot be decoded as an image
      */
     public synchronized int[] detectPrimaryFace(byte[] imageBytes) {
+        if (classifier == null) return null;
         if (imageBytes == null || imageBytes.length == 0) {
             throw new IllegalArgumentException("Cannot decode image — please upload a valid JPEG or PNG.");
         }

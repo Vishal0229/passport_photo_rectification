@@ -26,10 +26,15 @@ HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
 
 # Run as non-root for security (port 8080 does not require root)
 RUN addgroup --system appgroup \
-    && adduser --system --no-create-home --shell /bin/false --ingroup appgroup appuser
+    && adduser --system --no-create-home --shell /bin/false --ingroup appgroup appuser \
+    && mkdir -p /app/native-cache \
+    && chown appuser:appgroup /app/native-cache
 USER appuser
 
+# -Dorg.bytedeco.javacpp.cachedir: JavaCPP extracts OpenCV .so files here;
+# avoids noexec /tmp failures in some container runtimes.
 ENTRYPOINT ["java", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "-XX:TieredStopAtLevel=1", \
+    "-Dorg.bytedeco.javacpp.cachedir=/app/native-cache", \
     "-jar", "app.jar"]
