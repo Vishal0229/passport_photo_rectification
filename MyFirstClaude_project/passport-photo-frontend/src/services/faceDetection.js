@@ -23,7 +23,7 @@ let loadPromise = null
  *
  * @returns {Promise<void>}
  */
-async function ensureLoaded() {
+export async function ensureLoaded() {
   if (ready) return
   if (!loadPromise) {
     loadPromise = faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)

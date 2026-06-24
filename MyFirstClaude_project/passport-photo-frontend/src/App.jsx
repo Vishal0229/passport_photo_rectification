@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import UploadZone from './components/UploadZone'
+import CameraCapture from './components/CameraCapture'
 import CountrySelector from './components/CountrySelector'
 import CustomSpecForm from './components/CustomSpecForm'
 import ScaleWarning from './components/ScaleWarning'
@@ -46,6 +47,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [installPrompt, setInstallPrompt] = useState(null)
   const [uploadKey, setUploadKey] = useState(0)
+  const [cameraMode, setCameraMode] = useState(false)
   // Incremented on every new analyze/correct call; stale responses check against this before updating state.
   const requestIdRef = useRef(0)
 
@@ -182,6 +184,12 @@ export default function App() {
     }
   }
 
+  const handleCameraCapture = (file) => {
+    setCameraMode(false)
+    handleNewFileSelected()
+    handlePhotoSelect(file)
+  }
+
   const handleReset = () => {
     requestIdRef.current++   // invalidate any in-flight analyze/correct response
     if (photoUrl) URL.revokeObjectURL(photoUrl)
@@ -261,15 +269,41 @@ export default function App() {
           }
         </div>
 
-        {/* BOTTOM GRID — Upload + Analyze */}
+        {/* BOTTOM GRID — Upload/Camera + Analyze */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           <div className="flex flex-col gap-4">
-            <UploadZone
-              key={uploadKey}
-              onPhotoSelect={handlePhotoSelect}
-              onNewFileSelected={handleNewFileSelected}
-              photoUrl={photoUrl}
-            />
+            {/* Upload / Camera tab toggle */}
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setCameraMode(false)}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  !cameraMode ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                📤 Upload Photo
+              </button>
+              <button
+                onClick={() => setCameraMode(true)}
+                className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                  cameraMode ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                📷 Take Photo
+              </button>
+            </div>
+
+            {cameraMode
+              ? <CameraCapture
+                  onPhotoCapture={handleCameraCapture}
+                  onCancel={() => setCameraMode(false)}
+                />
+              : <UploadZone
+                  key={uploadKey}
+                  onPhotoSelect={handlePhotoSelect}
+                  onNewFileSelected={handleNewFileSelected}
+                  photoUrl={photoUrl}
+                />
+            }
             <ScaleWarning scaleFactor={scaleFactor} />
           </div>
           <div className="flex flex-col justify-center">
