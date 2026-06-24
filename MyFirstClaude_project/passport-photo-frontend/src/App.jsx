@@ -296,6 +296,7 @@ export default function App() {
               ? <CameraCapture
                   onPhotoCapture={handleCameraCapture}
                   onCancel={() => setCameraMode(false)}
+                  spec={targetSpec}
                 />
               : <UploadZone
                   key={uploadKey}

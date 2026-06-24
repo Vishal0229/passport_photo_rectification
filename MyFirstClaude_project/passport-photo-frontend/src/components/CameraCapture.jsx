@@ -2,18 +2,37 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import * as faceapi from '@vladmandic/face-api'
 import { ensureLoaded } from '../services/faceDetection'
 
-// Guide occupies 55% of canvas width, portrait 3:4 aspect ratio
-const GUIDE_W_RATIO = 0.55
-const GUIDE_ASPECT  = 4 / 3
-// Auto-capture after this many consecutive aligned detection frames (~400 ms each)
-const ALIGNED_FRAMES_NEEDED = 5
+const GUIDE_W_RATIO         = 0.55   // guide occupies 55% of canvas width (portrait)
+const ALIGNED_FRAMES_NEEDED = 5      // ~2 s at 400 ms/frame
 
-function getGuideRect(cw, ch) {
-  const gw = cw * GUIDE_W_RATIO
-  const gh = gw * GUIDE_ASPECT
-  const gx = (cw - gw) / 2
-  const gy = (ch - gh) / 2
-  return { gx, gy, gw, gh }
+// Default spec used when none is provided
+const DEFAULT_SPEC = {
+  widthMm: 35, heightMm: 45,
+  faceRatioMin: 0.50, faceRatioMax: 0.75,
+  backgroundColorHex: '#FFFFFF', backgroundColor: 'WHITE',
+}
+
+/**
+ * Returns the guide rectangle in canvas px, respecting the country's aspect ratio.
+ * For landscape specs (widthMm > heightMm) the guide is wider than tall.
+ */
+function getGuideRect(cw, ch, spec) {
+  const { widthMm = 35, heightMm = 45 } = spec || DEFAULT_SPEC
+  const aspect = heightMm / widthMm   // > 1 portrait, < 1 landscape
+
+  let gw, gh
+  if (aspect >= 1) {
+    // Portrait — constrain by width
+    gw = cw * GUIDE_W_RATIO
+    gh = gw * aspect
+    if (gh > ch * 0.88) { gh = ch * 0.88; gw = gh / aspect }
+  } else {
+    // Landscape (e.g. Japan 45×35 mm)
+    gh = ch * 0.55
+    gw = gh / aspect
+    if (gw > cw * 0.88) { gw = cw * 0.88; gh = gw * aspect }
+  }
+  return { gx: (cw - gw) / 2, gy: (ch - gh) / 2, gw, gh }
 }
 
 function roundedRectPath(ctx, x, y, w, h, r) {
@@ -30,8 +49,13 @@ function roundedRectPath(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-// Returns {isAligned, message} given a face-api detection and guide rect in canvas coords.
-function checkAlignment(detection, gx, gy, gw, gh, scaleX, scaleY) {
+/**
+ * Checks whether the detected face satisfies the country spec's face-ratio
+ * and position requirements. Returns {isAligned, message}.
+ */
+function checkAlignment(detection, gx, gy, gw, gh, scaleX, scaleY, spec) {
+  const { faceRatioMin = 0.50, faceRatioMax = 0.75 } = spec || DEFAULT_SPEC
+
   if (!detection) return { isAligned: false, message: 'Position your face in the oval' }
 
   const fx = detection.box.x * scaleX
@@ -41,26 +65,29 @@ function checkAlignment(detection, gx, gy, gw, gh, scaleX, scaleY) {
   const faceCX = fx + fw / 2
   const guideCX = gx + gw / 2
 
+  // Horizontal centering
   if (Math.abs(faceCX - guideCX) > gw * 0.15)
     return { isAligned: false, message: faceCX < guideCX ? 'Move right' : 'Move left' }
 
-  const wRatio = fw / gw
-  if (wRatio < 0.38) return { isAligned: false, message: 'Move closer' }
-  if (wRatio > 0.88) return { isAligned: false, message: 'Move further back' }
+  // Vertical position — face should be in the upper portion of the guide
+  if (fy < gy + gh * 0.02)      return { isAligned: false, message: 'Move down slightly' }
+  if (fy + fh > gy + gh * 0.85) return { isAligned: false, message: 'Move up slightly' }
 
-  if (fy < gy + gh * 0.03)         return { isAligned: false, message: 'Move down slightly' }
-  if (fy + fh > gy + gh * 0.82)    return { isAligned: false, message: 'Move up slightly' }
+  // Face ratio: face height / guide height must be within spec range
+  const ratio = fh / gh
+  if (ratio < faceRatioMin - 0.04) return { isAligned: false, message: 'Move closer' }
+  if (ratio > faceRatioMax + 0.04) return { isAligned: false, message: 'Move further back' }
 
   return { isAligned: true, message: 'Hold still — auto-capturing…' }
 }
 
-function drawOverlay(canvas, video, detection, borderColor) {
+function drawOverlay(canvas, detection, borderColor, spec) {
   const ctx = canvas.getContext('2d')
   const cw  = canvas.width
   const ch  = canvas.height
   ctx.clearRect(0, 0, cw, ch)
 
-  const { gx, gy, gw, gh } = getGuideRect(cw, ch)
+  const { gx, gy, gw, gh } = getGuideRect(cw, ch, spec)
 
   // Dark vignette outside guide, punched out inside
   ctx.save()
@@ -77,11 +104,14 @@ function drawOverlay(canvas, video, detection, borderColor) {
   ctx.lineWidth = 3
   ctx.stroke()
 
-  // Face oval (dashed, upper portion of guide)
+  // Face oval sized to spec's target face ratio (midpoint of min/max range)
+  const { faceRatioMin = 0.50, faceRatioMax = 0.75 } = spec || DEFAULT_SPEC
+  const targetRatio = (faceRatioMin + faceRatioMax) / 2
+  const ovalRY = (gh * targetRatio) / 2
+  const ovalRX = ovalRY * 0.76   // typical face width ≈ 76% of height
   const ovalCX = gx + gw / 2
-  const ovalCY = gy + gh * 0.34
-  const ovalRX = gw * 0.32
-  const ovalRY = gh * 0.30
+  const ovalCY = gy + gh * 0.08 + ovalRY   // ~8% headroom above oval
+
   ctx.beginPath()
   ctx.ellipse(ovalCX, ovalCY, ovalRX, ovalRY, 0, 0, Math.PI * 2)
   ctx.strokeStyle = borderColor
@@ -90,11 +120,15 @@ function drawOverlay(canvas, video, detection, borderColor) {
   ctx.stroke()
   ctx.setLineDash([])
 
-  // Shoulder curve hint
-  const sy = gy + gh * 0.70
+  // Shoulder curve below the oval
+  const sy = ovalCY + ovalRY + gh * 0.10
   ctx.beginPath()
   ctx.moveTo(gx + gw * 0.05, sy)
-  ctx.bezierCurveTo(gx + gw * 0.25, gy + gh * 0.56, gx + gw * 0.75, gy + gh * 0.56, gx + gw * 0.95, sy)
+  ctx.bezierCurveTo(
+    gx + gw * 0.28, ovalCY + ovalRY + gh * 0.02,
+    gx + gw * 0.72, ovalCY + ovalRY + gh * 0.02,
+    gx + gw * 0.95, sy,
+  )
   ctx.strokeStyle = borderColor + '66'
   ctx.lineWidth = 1.5
   ctx.setLineDash([4, 5])
@@ -102,21 +136,26 @@ function drawOverlay(canvas, video, detection, borderColor) {
   ctx.setLineDash([])
 }
 
-export default function CameraCapture({ onPhotoCapture, onCancel }) {
-  const videoRef        = useRef(null)
-  const canvasRef       = useRef(null)
-  const streamRef       = useRef(null)
-  const intervalRef     = useRef(null)
-  const alignedRef      = useRef(0)
-  const capturedRef     = useRef(false)
+export default function CameraCapture({ onPhotoCapture, onCancel, spec }) {
+  const videoRef    = useRef(null)
+  const canvasRef   = useRef(null)
+  const streamRef   = useRef(null)
+  const intervalRef = useRef(null)
+  const alignedRef  = useRef(0)
+  const capturedRef = useRef(false)
 
-  const [camStatus, setCamStatus]   = useState('loading') // loading | ready | error
-  const [guidance,  setGuidance]    = useState('Starting camera…')
-  const [faceState, setFaceState]   = useState('none')    // none | wrong | aligned
-  const [countdown, setCountdown]   = useState(null)
-  const [camError,  setCamError]    = useState(null)
+  const [camStatus, setCamStatus] = useState('loading')
+  const [guidance,  setGuidance]  = useState('Starting camera…')
+  const [faceState, setFaceState] = useState('none')   // none | wrong | aligned
+  const [countdown, setCountdown] = useState(null)
+  const [camError,  setCamError]  = useState(null)
 
-  // Capture current video frame and hand it to parent
+  const effectiveSpec = spec || DEFAULT_SPEC
+  const bgHex  = effectiveSpec.backgroundColorHex || '#FFFFFF'
+  const bgName = effectiveSpec.backgroundColor
+    ? effectiveSpec.backgroundColor.charAt(0) + effectiveSpec.backgroundColor.slice(1).toLowerCase()
+    : 'white'
+
   const doCapture = useCallback(() => {
     const video = videoRef.current
     if (!video) return
@@ -131,7 +170,7 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
     }, 'image/jpeg', 0.92)
   }, [onPhotoCapture])
 
-  // Start camera + load model in parallel
+  // Start camera + preload model in parallel
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -171,7 +210,7 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
     }
   }, [])
 
-  // Face detection loop — runs every 400 ms once camera is ready
+  // Face detection loop — every 400 ms
   useEffect(() => {
     if (camStatus !== 'ready') return
 
@@ -181,13 +220,9 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
       const canvas = canvasRef.current
       if (!video || !canvas || video.readyState < 2) return
 
-      // Sync canvas size to its CSS-rendered size
       const cw = canvas.offsetWidth
       const ch = canvas.offsetHeight
-      if (canvas.width !== cw || canvas.height !== ch) {
-        canvas.width  = cw
-        canvas.height = ch
-      }
+      if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch }
 
       let det = null
       try {
@@ -197,27 +232,25 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
         )
       } catch (_) {}
 
-      const { gx, gy, gw, gh } = getGuideRect(cw, ch)
+      const { gx, gy, gw, gh } = getGuideRect(cw, ch, effectiveSpec)
       const scaleX = video.videoWidth  ? cw / video.videoWidth  : 1
       const scaleY = video.videoHeight ? ch / video.videoHeight : 1
-      const { isAligned, message } = checkAlignment(det, gx, gy, gw, gh, scaleX, scaleY)
+      const { isAligned, message } = checkAlignment(det, gx, gy, gw, gh, scaleX, scaleY, effectiveSpec)
 
       const borderColor = !det ? '#94a3b8' : isAligned ? '#22c55e' : '#f59e0b'
-      drawOverlay(canvas, video, det, borderColor)
+      drawOverlay(canvas, det, borderColor, effectiveSpec)
 
       if (!det) {
         setFaceState('none'); setGuidance('Position your face in the oval')
         alignedRef.current = 0; setCountdown(null)
         return
       }
-
       if (!isAligned) {
         setFaceState('wrong'); setGuidance(message)
         alignedRef.current = 0; setCountdown(null)
         return
       }
 
-      // Face aligned
       setFaceState('aligned'); setGuidance(message)
       alignedRef.current += 1
       const remaining = ALIGNED_FRAMES_NEEDED - alignedRef.current
@@ -233,7 +266,7 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
 
     intervalRef.current = setInterval(tick, 400)
     return () => clearInterval(intervalRef.current)
-  }, [camStatus, doCapture])
+  }, [camStatus, doCapture, effectiveSpec])
 
   const handleManualCapture = () => {
     if (capturedRef.current || camStatus !== 'ready') return
@@ -245,7 +278,17 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-6">
-      <h2 className="text-base font-semibold text-gray-700 mb-4">Take Photo</h2>
+      <h2 className="text-base font-semibold text-gray-700 mb-1">Take Photo</h2>
+
+      {/* Background colour requirement */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-gray-500">Required background:</span>
+        <span
+          className="w-4 h-4 rounded-full border border-gray-300 shrink-0"
+          style={{ backgroundColor: bgHex }}
+        />
+        <span className="text-xs font-medium text-gray-600">{bgName}</span>
+      </div>
 
       {camError ? (
         <div className="text-center py-8 space-y-3">
@@ -256,19 +299,9 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
         </div>
       ) : (
         <>
-          {/* Camera viewport */}
           <div className="relative bg-black rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-            />
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
 
             {camStatus === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-3">
@@ -276,7 +309,6 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
                 <p className="text-white text-sm">Starting camera…</p>
               </div>
             )}
-
             {countdown !== null && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="text-7xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
@@ -286,7 +318,7 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
             )}
           </div>
 
-          {/* Guidance text */}
+          {/* Guidance */}
           <p className={`mt-3 text-center text-sm font-medium min-h-[1.25rem] ${
             faceState === 'aligned' ? 'text-green-600' :
             faceState === 'wrong'   ? 'text-amber-600' : 'text-gray-400'
@@ -294,7 +326,11 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
             {guidance}
           </p>
 
-          {/* Buttons */}
+          {/* Face ratio hint */}
+          <p className="mt-1 text-center text-xs text-gray-400">
+            Face should fill {Math.round(effectiveSpec.faceRatioMin * 100)}–{Math.round(effectiveSpec.faceRatioMax * 100)}% of photo height
+          </p>
+
           <div className="mt-4 flex gap-3">
             <button
               onClick={onCancel}
@@ -311,7 +347,7 @@ export default function CameraCapture({ onPhotoCapture, onCancel }) {
             </button>
           </div>
           <p className="mt-2 text-center text-xs text-gray-400">
-            Auto-captures when your face is correctly positioned
+            Auto-captures when face is correctly positioned for the selected country
           </p>
         </>
       )}
